@@ -5,7 +5,7 @@ const ENV_PREFIX = ['VITE_']
 
 export default defineConfig(() => ({
   envPrefix: ENV_PREFIX,
-  server: { port: 4001, host: false },
+  server: { port: 4001, host: 'localhost' },
   assetsInclude: ["**/*.glb"],
   define: {
     'process.env.ANCHOR_BROWSER': true,

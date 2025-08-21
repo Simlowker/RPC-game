@@ -2,12 +2,177 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    
+    <!-- Performance optimizations -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    
+    <!-- DNS prefetching for external resources -->
+    <link rel="dns-prefetch" href="//api.mainnet-beta.solana.com" />
+    <link rel="dns-prefetch" href="//api.devnet.solana.com" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    
+    <!-- PWA and app metadata -->
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Vite + React + TS</title>
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <meta name="theme-color" content="#8b5cf6" />
+    <meta name="background-color" content="#1e1b4b" />
+    
+    <!-- SEO and performance -->
+    <title>Solana RPS Game - Play Rock Paper Scissors on Blockchain</title>
+    <meta name="description" content="Play Rock Paper Scissors on Solana blockchain with real-time betting and instant payouts. Fast, secure, and decentralized gaming experience." />
+    <meta name="keywords" content="solana, blockchain, rps, rock paper scissors, gaming, web3, crypto, dapp" />
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://your-domain.com/" />
+    <meta property="og:title" content="Solana RPS Game - Blockchain Gaming" />
+    <meta property="og:description" content="Play Rock Paper Scissors on Solana blockchain with real-time betting and instant payouts." />
+    <meta property="og:image" content="/og-image.png" />
+    
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image" />
+    <meta property="twitter:url" content="https://your-domain.com/" />
+    <meta property="twitter:title" content="Solana RPS Game - Blockchain Gaming" />
+    <meta property="twitter:description" content="Play Rock Paper Scissors on Solana blockchain with real-time betting and instant payouts." />
+    <meta property="twitter:image" content="/twitter-image.png" />
+    
+    <!-- Performance hints -->
+    <link rel="preload" href="/src/main.tsx" as="script" />
+    <link rel="modulepreload" href="/src/App.tsx" />
+    
+    <!-- Critical CSS inlined for LCP optimization -->
+    <style>
+      /* Critical CSS for initial render */
+      body {
+        margin: 0;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+          'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+          sans-serif;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+      }
+      
+      #root {
+        min-height: 100vh;
+        background: linear-gradient(135deg, #581c87 0%, #1e3a8a 50%, #312e81 100%);
+      }
+      
+      /* Loading spinner for better perceived performance */
+      .loading-spinner {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        background: linear-gradient(135deg, #581c87 0%, #1e3a8a 50%, #312e81 100%);
+      }
+      
+      .spinner {
+        width: 40px;
+        height: 40px;
+        border: 4px solid #f3f4f6;
+        border-top: 4px solid #8b5cf6;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+      }
+      
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+    </style>
   </head>
   <body>
-    <div id="root"></div>
+    <!-- Loading indicator for better UX -->
+    <div id="root">
+      <div class="loading-spinner">
+        <div class="spinner"></div>
+      </div>
+    </div>
+    
+    <!-- Performance monitoring script -->
+    <script>
+      // Core Web Vitals monitoring
+      function sendToAnalytics(metric) {
+        // Replace with your analytics endpoint
+        console.log('Performance metric:', metric);
+        
+        // Store in localStorage for development
+        const metrics = JSON.parse(localStorage.getItem('performance-metrics') || '[]');
+        metrics.push({
+          ...metric,
+          timestamp: Date.now(),
+          url: window.location.href
+        });
+        localStorage.setItem('performance-metrics', JSON.stringify(metrics.slice(-50))); // Keep last 50 metrics
+      }
+      
+      // Enhanced performance observer
+      if ('PerformanceObserver' in window) {
+        try {
+          // LCP (Largest Contentful Paint)
+          new PerformanceObserver((entryList) => {
+            for (const entry of entryList.getEntries()) {
+              sendToAnalytics({
+                name: 'LCP',
+                value: entry.startTime,
+                rating: entry.startTime <= 2500 ? 'good' : entry.startTime <= 4000 ? 'needs-improvement' : 'poor'
+              });
+            }
+          }).observe({ entryTypes: ['largest-contentful-paint'] });
+          
+          // FID (First Input Delay)
+          new PerformanceObserver((entryList) => {
+            for (const entry of entryList.getEntries()) {
+              sendToAnalytics({
+                name: 'FID',
+                value: entry.processingStart - entry.startTime,
+                rating: entry.processingStart - entry.startTime <= 100 ? 'good' : 
+                       entry.processingStart - entry.startTime <= 300 ? 'needs-improvement' : 'poor'
+              });
+            }
+          }).observe({ entryTypes: ['first-input'] });
+          
+          // CLS (Cumulative Layout Shift)
+          let clsValue = 0;
+          new PerformanceObserver((entryList) => {
+            for (const entry of entryList.getEntries()) {
+              if (!entry.hadRecentInput) {
+                clsValue += entry.value;
+                sendToAnalytics({
+                  name: 'CLS',
+                  value: clsValue,
+                  rating: clsValue <= 0.1 ? 'good' : clsValue <= 0.25 ? 'needs-improvement' : 'poor'
+                });
+              }
+            }
+          }).observe({ entryTypes: ['layout-shift'] });
+        } catch (e) {
+          console.warn('Performance monitoring not available:', e);
+        }
+      }
+      
+      // Page load performance
+      window.addEventListener('load', () => {
+        setTimeout(() => {
+          const perfData = performance.getEntriesByType('navigation')[0];
+          sendToAnalytics({
+            name: 'Page Load',
+            value: perfData.loadEventEnd - perfData.fetchStart,
+            details: {
+              dns: perfData.domainLookupEnd - perfData.domainLookupStart,
+              connect: perfData.connectEnd - perfData.connectStart,
+              ttfb: perfData.responseStart - perfData.requestStart,
+              download: perfData.responseEnd - perfData.responseStart,
+              domInteractive: perfData.domInteractive - perfData.fetchStart,
+              domComplete: perfData.domComplete - perfData.fetchStart
+            }
+          });
+        }, 0);
+      });
+    </script>
+    
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

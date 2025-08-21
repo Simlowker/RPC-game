@@ -1,0 +1,131 @@
+{
+  "securityMonitoring": {
+    "enabled": true,
+    "alertingThresholds": {
+      "critical": {
+        "smartContractFailures": 1,
+        "fundsLocked": 1,
+        "securityBreaches": 1,
+        "responseTime": 5000
+      },
+      "high": {
+        "errorRate": 0.02,
+        "memoryUsage": 0.85,
+        "failedTransactions": 0.05,
+        "vulnerabilityDetection": 1
+      },
+      "medium": {
+        "responseTime": 3000,
+        "unusualActivity": 10,
+        "rateLimitHits": 100,
+        "suspiciousPatterns": 5
+      }
+    },
+    "monitoring": {
+      "transactionMonitoring": {
+        "enabled": true,
+        "patterns": [
+          "rapidFireBetting",
+          "largeFundMovements",
+          "suspiciousTimings",
+          "coordinatedActivity"
+        ],
+        "thresholds": {
+          "maxBetsPerMinute": 30,
+          "maxFundTransfer": 10000,
+          "minTimeBetweenBets": 1000
+        }
+      },
+      "performanceMonitoring": {
+        "enabled": true,
+        "metrics": [
+          "responseTime",
+          "errorRate",
+          "memoryUsage", 
+          "cpuUsage",
+          "networkLatency"
+        ],
+        "sampleRate": 0.1
+      },
+      "securityScanning": {
+        "enabled": true,
+        "automated": true,
+        "scanTypes": [
+          "dependencyVulnerabilities",
+          "codeAnalysis",
+          "configurationAudit",
+          "accessControlReview"
+        ],
+        "frequency": "daily"
+      }
+    },
+    "incidentResponse": {
+      "autoMitigation": {
+        "enabled": true,
+        "actions": [
+          "rateLimit",
+          "temporaryBlock",
+          "alertOperators",
+          "logIncident"
+        ]
+      },
+      "escalationPaths": [
+        {
+          "severity": "critical",
+          "contacts": ["security-team", "platform-owner"],
+          "timeToEscalate": 300
+        },
+        {
+          "severity": "high", 
+          "contacts": ["on-call-engineer"],
+          "timeToEscalate": 900
+        }
+      ]
+    },
+    "compliance": {
+      "auditLogging": {
+        "enabled": true,
+        "retention": "7 years",
+        "events": [
+          "userRegistration",
+          "fundTransfers",
+          "gameOutcomes",
+          "systemAccess",
+          "configurationChanges"
+        ]
+      },
+      "reportingRequirements": {
+        "suspicious_activity": {
+          "threshold": 3000,
+          "currency": "USD",
+          "reportingAuthority": "REQUIRED"
+        },
+        "data_protection": {
+          "gdpr_compliance": true,
+          "ccpa_compliance": true,
+          "user_consent_tracking": true
+        }
+      }
+    }
+  },
+  "recommendedImplementation": {
+    "immediate": [
+      "Fix critical smart contract vulnerabilities",
+      "Update vulnerable dependencies",
+      "Implement basic rate limiting",
+      "Add security headers"
+    ],
+    "shortTerm": [
+      "Deploy transaction monitoring",
+      "Set up automated alerting",
+      "Implement compliance logging",
+      "Add input validation"
+    ],
+    "longTerm": [
+      "Complete compliance framework",
+      "Advanced threat detection",
+      "ML-based fraud detection",
+      "Comprehensive audit system"
+    ]
+  }
+}

@@ -1,20 +1,19 @@
 import React from 'react'
 import { Route, Routes, useLocation } from 'react-router-dom'
 import { useWalletModal } from '@solana/wallet-adapter-react-ui'
-import { GambaUi } from 'gamba-react-ui-v2'
-import { useTransactionError } from 'gamba-react-v2'
+import { SolDuelUi } from './components/UI'
 
 import { Modal } from './components/Modal'
-import { TOS_HTML, ENABLE_TROLLBOX } from './constants'
+import { TOS_HTML } from './constants'
 import { useToast } from './hooks/useToast'
 import { useUserStore } from './hooks/useUserStore'
 
-import Dashboard from './sections/Dashboard/Dashboard'
+import HomePage from './pages/HomePage'
+import ProfilePage from './pages/ProfilePage'
+import HelpPage from './pages/HelpPage'
 import Game from './sections/Game/Game'
 import Header from './sections/Header'
-import RecentPlays from './sections/RecentPlays/RecentPlays'
 import Toasts from './sections/Toasts'
-import TrollBox from './components/TrollBox'
 
 import { MainWrapper, TosInner, TosWrapper } from './styles'
 
@@ -32,17 +31,8 @@ function ErrorHandler() {
   const walletModal = useWalletModal()
   const toast       = useToast()
 
-  // React‑state not needed; let Toasts surface details
-  useTransactionError((err) => {
-    if (err.message === 'NOT_CONNECTED') {
-      walletModal.setVisible(true)
-    } else {
-      toast({
-        title: '❌ Transaction error',
-        description: err.error?.errorMessage ?? err.message,
-      })
-    }
-  })
+  // Custom error handling for SolDuel
+  // Transaction errors will be handled by individual components
 
   return null
 }
@@ -65,9 +55,9 @@ export default function App() {
             <TosInner dangerouslySetInnerHTML={{ __html: TOS_HTML }} />
           </TosWrapper>
           <p>By playing on our platform, you confirm your compliance.</p>
-          <GambaUi.Button main onClick={() => set({ newcomer: false })}>
+          <SolDuelUi.Button main onClick={() => set({ newcomer: false })}>
             Acknowledge
-          </GambaUi.Button>
+          </SolDuelUi.Button>
         </Modal>
       )}
 
@@ -79,17 +69,13 @@ export default function App() {
 
       <MainWrapper>
         <Routes>
-          {/* Normal landing page always shows Dashboard (with optional inline game) */}
-          <Route path="/"          element={<Dashboard />} />
-          {/* Dedicated game pages */}
-          <Route path="/:gameId"   element={<Game />} />
+          <Route path="/" element={<HomePage />} />
+          <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/help" element={<HelpPage />} />
+          <Route path="/rps" element={<Game />} />
+          <Route path="/:gameId" element={<Game />} />
         </Routes>
-
-        <h2 style={{ textAlign: 'center' }}>Recent Plays</h2>
-        <RecentPlays />
       </MainWrapper>
-
-      {ENABLE_TROLLBOX && <TrollBox />}
     </>
   )
 }

@@ -1,23 +1,41 @@
 {
-	"name": "Gamba Play",
-	"short_name": "Gamba",
+	"name": "SolDuel - Rock Paper Scissors on Solana",
+	"short_name": "SolDuel",
 	"start_url": "/",
 	"display": "standalone",
-	"background_color": "#000000",
+	"background_color": "#FFFFFF",
 	"lang": "en",
 	"scope": "/",
-	"theme_color": "#FF5555",
-	"description": "",
+	"theme_color": "#9945FF",
+	"description": "Skill-based Rock Paper Scissors gaming on Solana blockchain. Fair, transparent, competitive gaming with instant settlements.",
+	"categories": ["games", "entertainment", "finance"],
 	"icons": [
 		{
 			"src": "/icon-512.png",
 			"sizes": "512x512",
-			"type": "image/png"
+			"type": "image/png",
+			"purpose": "any maskable"
 		},
 		{
 			"src": "/icon-192.png",
 			"sizes": "192x192",
-			"type": "image/png"
+			"type": "image/png",
+			"purpose": "any maskable"
+		},
+		{
+			"src": "/favicon.svg",
+			"sizes": "any",
+			"type": "image/svg+xml",
+			"purpose": "any"
+		}
+	],
+	"screenshots": [
+		{
+			"src": "/logo.svg",
+			"sizes": "1280x720",
+			"type": "image/svg+xml",
+			"form_factor": "wide",
+			"label": "SolDuel gameplay interface"
 		}
 	]
 }

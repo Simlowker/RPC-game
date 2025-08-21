@@ -1,0 +1,156 @@
+# Prometheus Alert Rules for RPS Platform
+
+groups:
+  - name: rps_platform_alerts
+    rules:
+      # High-level service availability
+      - alert: ServiceDown
+        expr: up == 0
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Service {{ $labels.instance }} is down"
+          description: "Service {{ $labels.instance }} has been down for more than 5 minutes."
+
+      # Frontend application alerts
+      - alert: FrontendHighErrorRate
+        expr: rate(http_requests_total{job="rps-frontend",status=~"5.."}[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High error rate on frontend"
+          description: "Frontend error rate is above 10% for 5 minutes."
+
+      - alert: FrontendHighLatency
+        expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{job="rps-frontend"}[5m])) > 3
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High latency on frontend"
+          description: "95th percentile latency is above 3 seconds for 10 minutes."
+
+      # API backend alerts
+      - alert: APIHighErrorRate
+        expr: rate(http_requests_total{job="rps-api",status=~"5.."}[5m]) > 0.05
+        for: 3m
+        labels:
+          severity: critical
+        annotations:
+          summary: "High error rate on API"
+          description: "API error rate is above 5% for 3 minutes."
+
+      - alert: APIHighLatency
+        expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{job="rps-api"}[5m])) > 1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High latency on API"
+          description: "95th percentile API latency is above 1 second for 5 minutes."
+
+      # Database alerts
+      - alert: DatabaseConnectionsHigh
+        expr: pg_stat_database_numbackends > 80
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High database connections"
+          description: "Database has more than 80 active connections."
+
+      - alert: DatabaseSlowQueries
+        expr: pg_stat_statements_mean_time_ms > 1000
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Slow database queries detected"
+          description: "Average query time is above 1 second."
+
+      # System resource alerts
+      - alert: HighCPUUsage
+        expr: 100 - (avg by(instance) (irate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High CPU usage"
+          description: "CPU usage is above 80% for 10 minutes on {{ $labels.instance }}."
+
+      - alert: HighMemoryUsage
+        expr: (node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) / node_memory_MemTotal_bytes * 100 > 85
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High memory usage"
+          description: "Memory usage is above 85% on {{ $labels.instance }}."
+
+      - alert: DiskSpaceLow
+        expr: (node_filesystem_avail_bytes / node_filesystem_size_bytes) * 100 < 10
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Low disk space"
+          description: "Disk space is below 10% on {{ $labels.instance }}."
+
+      # Solana-specific alerts
+      - alert: SolanaRPCHighLatency
+        expr: solana_rpc_response_time_seconds > 5
+        for: 3m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High Solana RPC latency"
+          description: "Solana RPC response time is above 5 seconds."
+
+      - alert: SolanaTransactionFailures
+        expr: rate(solana_transaction_failures_total[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "High Solana transaction failure rate"
+          description: "Solana transaction failure rate is above 10%."
+
+      # Game-specific alerts
+      - alert: HighMatchCreationFailures
+        expr: rate(rps_match_creation_failures_total[5m]) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High match creation failure rate"
+          description: "RPS match creation failure rate is above 5%."
+
+      - alert: ActiveMatchesVeryHigh
+        expr: rps_active_matches > 5000
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Very high number of active matches"
+          description: "Number of active RPS matches is above 5000."
+
+      # Security alerts
+      - alert: HighFailedLogins
+        expr: rate(failed_login_attempts_total[5m]) > 10
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High failed login attempts"
+          description: "Failed login attempts rate is above 10 per minute."
+
+      - alert: SuspiciousActivity
+        expr: rate(suspicious_activity_total[5m]) > 1
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Suspicious activity detected"
+          description: "Potential security threat detected."

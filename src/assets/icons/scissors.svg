@@ -1,0 +1,12 @@
+<svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Scissors V-shape -->
+  <path d="M12 36 L24 24 L12 12 L16 8 L28 20 L28 28 L16 40 Z" fill="#9945FF"/>
+  <path d="M36 36 L24 24 L36 12 L32 8 L20 20 L20 28 L32 40 Z" fill="#9945FF"/>
+  <!-- Finger holes -->
+  <circle cx="14" cy="14" r="3" fill="white"/>
+  <circle cx="14" cy="34" r="3" fill="white"/>
+  <circle cx="34" cy="14" r="3" fill="white"/>
+  <circle cx="34" cy="34" r="3" fill="white"/>
+  <!-- Center pivot -->
+  <circle cx="24" cy="24" r="2" fill="#14F195"/>
+</svg>

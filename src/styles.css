@@ -5,19 +5,16 @@
 :root {
   --background-color: #0b0b0e;
   --text-color: #ffffff;
-  --gamba-ui-primary-color: #9564ff;
+  --primary-color: #8b5cf6;
+  --secondary-color: #3b82f6;
+}
 
-  --gamba-ui-border-radius: 10px;
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
 
-  --gamba-ui-button-default-background: #0e0e16;
-  --gamba-ui-button-default-background-hover: #11111d;
-  --gamba-ui-button-default-color: white;
-
-  --gamba-ui-button-main-background: #8851ff;
-  --gamba-ui-button-main-color: white;
-  --gamba-ui-button-main-background-hover: #9564ff;
-
-  --gamba-ui-input-background: #0e0e16;
+:root {
   --gamba-ui-input-color: #ffffff;
   --gamba-ui-input-background-hover: #11111d;
 }

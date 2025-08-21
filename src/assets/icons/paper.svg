@@ -1,0 +1,11 @@
+<svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Open palm shape -->
+  <rect x="18" y="8" width="4" height="28" rx="2" fill="#9945FF"/>
+  <rect x="24" y="6" width="4" height="30" rx="2" fill="#9945FF"/>
+  <rect x="30" y="8" width="4" height="28" rx="2" fill="#9945FF"/>
+  <rect x="36" y="10" width="4" height="26" rx="2" fill="#9945FF"/>
+  <rect x="12" y="12" width="4" height="24" rx="2" fill="#9945FF"/>
+  <!-- Palm base -->
+  <ellipse cx="24" cy="36" rx="14" ry="6" fill="#14F195" opacity="0.6"/>
+  <rect x="10" y="32" width="28" height="8" rx="4" fill="#9945FF" opacity="0.8"/>
+</svg>

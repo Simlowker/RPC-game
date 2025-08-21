@@ -1,115 +1,99 @@
-// src/sections/Game/Game.tsx
-import React from 'react'
-import { useParams } from 'react-router-dom'
-import { GambaUi, useSoundStore } from 'gamba-react-ui-v2'
-import { useTransactionError } from 'gamba-react-v2'
+// src/sections/Game/Game.tsx - Simplified Game Router
+import React, { Suspense } from 'react'
+import { useParams, useNavigate } from 'react-router-dom'
+import styled from 'styled-components'
+import { getGameById } from '../../games'
+import { SolDuelUi } from '../../components/UI'
 
-import { Icon } from '../../components/Icon'
-import { Modal } from '../../components/Modal'
-import { GAMES } from '../../games'
-import { useUserStore } from '../../hooks/useUserStore'
-import { GameSlider } from '../Dashboard/Dashboard'
-import { Container, Controls, IconButton, MetaControls, Screen, Spinner, Splash } from './Game.styles'
-import { LoadingBar, useLoadingState } from './LoadingBar'
-import { ProvablyFairModal } from './ProvablyFairModal'
-import { TransactionModal } from './TransactionModal'
+const GameContainer = styled.div`
+  min-height: calc(100vh - 60px);
+  display: flex;
+  flex-direction: column;
+`
 
-function CustomError() {
-  return (
-    <GambaUi.Portal target="error">
-      <GambaUi.Responsive>
-        <h1>😭 Oh no!</h1>
-        <p>Something went wrong</p>
-      </GambaUi.Responsive>
-    </GambaUi.Portal>
-  )
-}
+const LoadingContainer = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 50vh;
+  flex-direction: column;
+  gap: 20px;
+`
 
-function CustomRenderer() {
-  const { game } = GambaUi.useGame()
-  const [info, setInfo] = React.useState(false)
-  const [provablyFair, setProvablyFair] = React.useState(false)
-  const soundStore = useSoundStore()
-  const firstTimePlaying = useUserStore(s => !s.gamesPlayed.includes(game.id))
-  const markGameAsPlayed = useUserStore(s => () => s.markGameAsPlayed(game.id, true))
-  const [ready, setReady] = React.useState(false)
-  const [txModal, setTxModal] = React.useState(false)
-  const loading = useLoadingState()
+const ErrorContainer = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 50vh;
+  flex-direction: column;
+  gap: 20px;
+  text-align: center;
+`
 
-  React.useEffect(() => {
-    const t = setTimeout(() => setReady(true), 750)
-    return () => clearTimeout(t)
-  }, [])
+const LoadingText = styled.div`
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 1.1rem;
+`
 
-  React.useEffect(() => {
-    const t = setTimeout(() => setInfo(firstTimePlaying), 1000)
-    return () => clearTimeout(t)
-  }, [firstTimePlaying])
+const ErrorTitle = styled.h1`
+  color: white;
+  font-size: 2rem;
+  margin-bottom: 10px;
+`
 
-  const closeInfo = () => {
-    markGameAsPlayed()
-    setInfo(false)
+const ErrorMessage = styled.p`
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 1rem;
+  margin-bottom: 30px;
+`
+
+function GameLoader({ gameId }: { gameId: string }) {
+  const navigate = useNavigate()
+  
+  const game = getGameById(gameId)
+  
+  if (!game) {
+    return (
+      <ErrorContainer>
+        <ErrorTitle>🎮 Game Not Found</ErrorTitle>
+        <ErrorMessage>
+          The game "{gameId}" doesn't exist or isn't available yet.
+        </ErrorMessage>
+        <SolDuelUi.Button main onClick={() => navigate('/')}>
+          ← Back to Home
+        </SolDuelUi.Button>
+      </ErrorContainer>
+    )
   }
 
-  // global transaction errors
-  useTransactionError(err => {
-    if (err.message === 'NOT_CONNECTED') return
-    // you might want to show a toast here
-  })
+  const GameComponent = game.app
 
   return (
-    <>
-      {info && (
-        <Modal onClose={closeInfo}>
-          <h1>
-            <img height="100" title={game.meta.name} src={game.meta.image} />
-          </h1>
-          <p>{game.meta.description}</p>
-          <GambaUi.Button main onClick={closeInfo}>Play</GambaUi.Button>
-        </Modal>
-      )}
-      {provablyFair && <ProvablyFairModal onClose={() => setProvablyFair(false)} />}
-      {txModal     && <TransactionModal onClose={() => setTxModal(false)} />}
-
-      <Container>
-        <Screen>
-          <Splash><img height="150" src={game.meta.image} /></Splash>
-          <GambaUi.PortalTarget target="error" />
-          {ready && <GambaUi.PortalTarget target="screen" />}
-
-          <MetaControls>
-            <IconButton onClick={() => setInfo(true)}><Icon.Info /></IconButton>
-            <IconButton onClick={() => setProvablyFair(true)}><Icon.Fairness /></IconButton>
-            <IconButton onClick={() => soundStore.set(soundStore.volume ? 0 : .5)}>
-              {soundStore.volume ? <Icon.Volume /> : <Icon.VolumeMuted />}
-            </IconButton>
-          </MetaControls>
-        </Screen>
-
-        <LoadingBar />
-
-        {/* ← No inner wrapper—controls & play buttons are centered by Controls */}
-        <Controls>
-          <GambaUi.PortalTarget target="controls" />
-          <GambaUi.PortalTarget target="play" />
-        </Controls>
-      </Container>
-    </>
+    <GameContainer>
+      <Suspense fallback={
+        <LoadingContainer>
+          <div style={{ 
+            width: '40px', 
+            height: '40px', 
+            border: '4px solid rgba(139, 92, 246, 0.3)',
+            borderTop: '4px solid #8b5cf6',
+            borderRadius: '50%',
+            animation: 'spin 1s linear infinite'
+          }} />
+          <LoadingText>Loading {game.meta.name}...</LoadingText>
+        </LoadingContainer>
+      }>
+        <GameComponent />
+      </Suspense>
+    </GameContainer>
   )
 }
 
 export default function Game() {
-  const { gameId } = useParams()
-  const game = GAMES.find(g => g.id === gameId)
-
-  return (
-    <>
-      {game ? (
-        <GambaUi.Game game={game} errorFallback={<CustomError />} children={<CustomRenderer />} />
-      ) : (
-        <h1>Game not found! 👎</h1>
-      )}
-      <GameSlider />
-    </>
-  )
+  const { gameId } = useParams<{ gameId: string }>()
+  
+  // Default to RPS if no gameId specified
+  const targetGameId = gameId || 'rps'
+  
+  return <GameLoader gameId={targetGameId} />
 }

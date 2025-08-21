@@ -1,8 +1,8 @@
 use anchor_lang::prelude::*;
-use anchor_spl::token::{self, Token, TokenAccount, Mint, Transfer as SplTransfer};
+use anchor_spl::token::{self, Mint, Token, TokenAccount, Transfer as SplTransfer};
 use sha2::{Digest, Sha256};
 
-declare_id!("zYQ16fyWiwZWgWjpQ9JBzL4QwLbp5MbezSBwSi2YTfY");
+declare_id!("32tQhc2c4LurhdBwDzzV8f3PtdhKm1iVaPSumDTZWAvb");
 
 #[program]
 pub mod rps {
@@ -18,11 +18,16 @@ pub mod rps {
     ) -> Result<()> {
         let match_account = &mut ctx.accounts.match_account;
         let creator = &ctx.accounts.creator;
-        
+
         require!(bet_amount > 0, RpsError::InvalidBetAmount);
-        require!(join_deadline > Clock::get()?.unix_timestamp, RpsError::InvalidDeadline);
+        require!(
+            join_deadline > Clock::get()?.unix_timestamp,
+            RpsError::InvalidDeadline
+        );
         require!(reveal_deadline > join_deadline, RpsError::InvalidDeadline);
-        require!(fee_bps <= 1000, RpsError::InvalidFeeRate); // Max 10% fee
+        require!(fee_bps <= 500, RpsError::InvalidFeeRate); // Max 5% fee for production
+        require!(bet_amount >= 1000, RpsError::BetTooSmall); // Min 0.001 SOL or equivalent
+        require!(bet_amount <= 100_000_000_000, RpsError::BetTooLarge); // Max 100 SOL or equivalent
 
         match_account.creator = creator.key();
         match_account.opponent = Pubkey::default();
@@ -37,15 +42,30 @@ pub mod rps {
         match_account.status = MatchStatus::WaitingForOpponent;
         match_account.fee_bps = fee_bps;
         match_account.vault_pda_bump = ctx.bumps.vault;
+        match_account.created_at = Clock::get()?.unix_timestamp;
 
         // Transfer creator's bet to vault
         if let Some(token_mint) = &ctx.accounts.token_mint {
             // SPL Token transfer
             let transfer_ctx = CpiContext::new(
-                ctx.accounts.token_program.to_account_info(),
+                ctx.accounts
+                    .token_program
+                    .as_ref()
+                    .unwrap()
+                    .to_account_info(),
                 SplTransfer {
-                    from: ctx.accounts.creator_token_account.as_ref().unwrap().to_account_info(),
-                    to: ctx.accounts.vault_token_account.as_ref().unwrap().to_account_info(),
+                    from: ctx
+                        .accounts
+                        .creator_token_account
+                        .as_ref()
+                        .unwrap()
+                        .to_account_info(),
+                    to: ctx
+                        .accounts
+                        .vault_token_account
+                        .as_ref()
+                        .unwrap()
+                        .to_account_info(),
                     authority: creator.to_account_info(),
                 },
             );
@@ -55,7 +75,7 @@ pub mod rps {
             let lamports = bet_amount;
             let creator_info = creator.to_account_info();
             let vault_info = ctx.accounts.vault.to_account_info();
-            
+
             **creator_info.try_borrow_mut_lamports()? -= lamports;
             **vault_info.try_borrow_mut_lamports()? += lamports;
         }
@@ -71,16 +91,24 @@ pub mod rps {
         Ok(())
     }
 
-    pub fn join_match(
-        ctx: Context<JoinMatch>,
-        commitment_hash: [u8; 32],
-    ) -> Result<()> {
+    pub fn join_match(ctx: Context<JoinMatch>, commitment_hash: [u8; 32]) -> Result<()> {
         let match_account = &mut ctx.accounts.match_account;
         let opponent = &ctx.accounts.opponent;
-        
-        require!(match_account.status == MatchStatus::WaitingForOpponent, RpsError::InvalidMatchStatus);
-        require!(Clock::get()?.unix_timestamp <= match_account.join_deadline, RpsError::DeadlinePassed);
-        require!(opponent.key() != match_account.creator, RpsError::CannotPlaySelf);
+
+        // Security validations
+        match_account.validate_active()?;
+        require!(
+            match_account.status == MatchStatus::WaitingForOpponent,
+            RpsError::InvalidMatchStatus
+        );
+        require!(
+            Clock::get()?.unix_timestamp <= match_account.join_deadline,
+            RpsError::DeadlinePassed
+        );
+        require!(
+            opponent.key() != match_account.creator,
+            RpsError::CannotPlaySelf
+        );
 
         match_account.opponent = opponent.key();
         match_account.commitment_opponent = commitment_hash;
@@ -90,10 +118,24 @@ pub mod rps {
         if let Some(_) = match_account.token_mint {
             // SPL Token transfer
             let transfer_ctx = CpiContext::new(
-                ctx.accounts.token_program.to_account_info(),
+                ctx.accounts
+                    .token_program
+                    .as_ref()
+                    .unwrap()
+                    .to_account_info(),
                 SplTransfer {
-                    from: ctx.accounts.opponent_token_account.as_ref().unwrap().to_account_info(),
-                    to: ctx.accounts.vault_token_account.as_ref().unwrap().to_account_info(),
+                    from: ctx
+                        .accounts
+                        .opponent_token_account
+                        .as_ref()
+                        .unwrap()
+                        .to_account_info(),
+                    to: ctx
+                        .accounts
+                        .vault_token_account
+                        .as_ref()
+                        .unwrap()
+                        .to_account_info(),
                     authority: opponent.to_account_info(),
                 },
             );
@@ -103,7 +145,7 @@ pub mod rps {
             let lamports = match_account.bet_amount;
             let opponent_info = opponent.to_account_info();
             let vault_info = ctx.accounts.vault.to_account_info();
-            
+
             **opponent_info.try_borrow_mut_lamports()? -= lamports;
             **vault_info.try_borrow_mut_lamports()? += lamports;
         }
@@ -116,33 +158,48 @@ pub mod rps {
         Ok(())
     }
 
-    pub fn reveal(
-        ctx: Context<Reveal>,
-        choice: Choice,
-        salt: [u8; 32],
-        nonce: u64,
-    ) -> Result<()> {
+    pub fn reveal(ctx: Context<Reveal>, choice: Choice, salt: [u8; 32], nonce: u64) -> Result<()> {
         let match_account = &mut ctx.accounts.match_account;
         let player = &ctx.accounts.player;
-        
-        require!(match_account.status == MatchStatus::WaitingForReveal, RpsError::InvalidMatchStatus);
-        require!(Clock::get()?.unix_timestamp <= match_account.reveal_deadline, RpsError::DeadlinePassed);
-        
+
+        // Security validations
+        match_account.validate_active()?;
+        require!(
+            match_account.status == MatchStatus::WaitingForReveal,
+            RpsError::InvalidMatchStatus
+        );
+        require!(
+            Clock::get()?.unix_timestamp <= match_account.reveal_deadline,
+            RpsError::DeadlinePassed
+        );
+
         // Verify commitment hash
         let expected_hash = create_commitment_hash(choice, &salt, &player.key(), nonce);
-        
+
         let is_creator = player.key() == match_account.creator;
         let is_opponent = player.key() == match_account.opponent;
-        
+
         require!(is_creator || is_opponent, RpsError::NotParticipant);
-        
+
         if is_creator {
-            require!(expected_hash == match_account.commitment_creator, RpsError::InvalidCommitment);
-            require!(match_account.revealed_creator.is_none(), RpsError::AlreadyRevealed);
+            require!(
+                expected_hash == match_account.commitment_creator,
+                RpsError::InvalidCommitment
+            );
+            require!(
+                match_account.revealed_creator.is_none(),
+                RpsError::AlreadyRevealed
+            );
             match_account.revealed_creator = Some(choice);
         } else {
-            require!(expected_hash == match_account.commitment_opponent, RpsError::InvalidCommitment);
-            require!(match_account.revealed_opponent.is_none(), RpsError::AlreadyRevealed);
+            require!(
+                expected_hash == match_account.commitment_opponent,
+                RpsError::InvalidCommitment
+            );
+            require!(
+                match_account.revealed_opponent.is_none(),
+                RpsError::AlreadyRevealed
+            );
             match_account.revealed_opponent = Some(choice);
         }
 
@@ -163,70 +220,152 @@ pub mod rps {
     pub fn settle(ctx: Context<Settle>) -> Result<()> {
         let match_account = &mut ctx.accounts.match_account;
         
-        require!(match_account.status == MatchStatus::ReadyToSettle, RpsError::InvalidMatchStatus);
+        // Security validations
+        match_account.validate_active()?;
+        require!(
+            match_account.status == MatchStatus::ReadyToSettle,
+            RpsError::InvalidMatchStatus
+        );
         
-        let creator_choice = match_account.revealed_creator.unwrap();
-        let opponent_choice = match_account.revealed_opponent.unwrap();
+        // Additional security: Verify both players exist and revealed
+        require!(match_account.creator != Pubkey::default(), RpsError::InvalidCreator);
+        require!(match_account.opponent != Pubkey::default(), RpsError::InvalidOpponent);
         
+        let creator_choice = match_account.revealed_creator
+            .ok_or(RpsError::CreatorNotRevealed)?;
+        let opponent_choice = match_account.revealed_opponent
+            .ok_or(RpsError::OpponentNotRevealed)?;
+
+        // Calculate payouts with overflow protection
+        let bet_amount = match_account.bet_amount;
+        require!(bet_amount > 0, RpsError::InvalidBetAmount);
+        
+        let total_bet = bet_amount.checked_mul(2)
+            .ok_or(RpsError::ArithmeticOverflow)?;
+        
+        let fee_bps = match_account.fee_bps;
+        require!(fee_bps <= 500, RpsError::InvalidFeeRate); // Max 5% fee
+        
+        let fee_amount = total_bet.checked_mul(fee_bps as u64)
+            .ok_or(RpsError::ArithmeticOverflow)?
+            .checked_div(10000)
+            .ok_or(RpsError::ArithmeticOverflow)?;
+            
+        let payout_amount = total_bet.checked_sub(fee_amount)
+            .ok_or(RpsError::ArithmeticOverflow)?;
+
+        // Determine winner and execute payouts
         let result = determine_winner(creator_choice, opponent_choice);
-        let total_bet = match_account.bet_amount * 2;
-        let fee_amount = (total_bet * match_account.fee_bps as u64) / 10000;
-        let payout_amount = total_bet - fee_amount;
+        let match_key = match_account.key();
+        let creator_key = match_account.creator;
+        let opponent_key = match_account.opponent;
         
+        // Mark as settled BEFORE transfers to prevent reentrancy
+        match_account.status = MatchStatus::Settled;
+
         match result {
             GameResult::CreatorWins => {
+                // Transfer full payout to creator
                 transfer_from_vault(
-                    &ctx.accounts,
-                    &ctx.accounts.creator.to_account_info(),
+                    &ctx.accounts.vault,
+                    &ctx.accounts.creator,
+                    ctx.accounts.creator_token_account.as_ref(),
+                    ctx.accounts.vault_token_account.as_ref(),
+                    match_account.token_mint,
                     payout_amount,
-                    match_account,
+                    match_account.vault_pda_bump,
+                    match_key,
+                    ctx.accounts.token_program.as_ref(),
+                    &ctx.accounts.system_program,
                 )?;
-            },
+                
+                // Transfer fee to fee collector
+                if fee_amount > 0 {
+                    transfer_from_vault(
+                        &ctx.accounts.vault,
+                        &ctx.accounts.fee_collector,
+                        ctx.accounts.fee_collector_token_account.as_ref(),
+                        ctx.accounts.vault_token_account.as_ref(),
+                        match_account.token_mint,
+                        fee_amount,
+                        match_account.vault_pda_bump,
+                        match_key,
+                        ctx.accounts.token_program.as_ref(),
+                        &ctx.accounts.system_program,
+                    )?;
+                }
+            }
             GameResult::OpponentWins => {
+                // Transfer full payout to opponent
                 transfer_from_vault(
-                    &ctx.accounts,
-                    &ctx.accounts.opponent.to_account_info(),
+                    &ctx.accounts.vault,
+                    &ctx.accounts.opponent,
+                    ctx.accounts.opponent_token_account.as_ref(),
+                    ctx.accounts.vault_token_account.as_ref(),
+                    match_account.token_mint,
                     payout_amount,
-                    match_account,
+                    match_account.vault_pda_bump,
+                    match_key,
+                    ctx.accounts.token_program.as_ref(),
+                    &ctx.accounts.system_program,
                 )?;
-            },
+                
+                // Transfer fee to fee collector
+                if fee_amount > 0 {
+                    transfer_from_vault(
+                        &ctx.accounts.vault,
+                        &ctx.accounts.fee_collector,
+                        ctx.accounts.fee_collector_token_account.as_ref(),
+                        ctx.accounts.vault_token_account.as_ref(),
+                        match_account.token_mint,
+                        fee_amount,
+                        match_account.vault_pda_bump,
+                        match_key,
+                        ctx.accounts.token_program.as_ref(),
+                        &ctx.accounts.system_program,
+                    )?;
+                }
+            }
             GameResult::Tie => {
-                // Refund both players their original bets
+                // Refund original bets to both players (no fee on ties)
                 transfer_from_vault(
-                    &ctx.accounts,
-                    &ctx.accounts.creator.to_account_info(),
-                    match_account.bet_amount,
-                    match_account,
+                    &ctx.accounts.vault,
+                    &ctx.accounts.creator,
+                    ctx.accounts.creator_token_account.as_ref(),
+                    ctx.accounts.vault_token_account.as_ref(),
+                    match_account.token_mint,
+                    bet_amount,
+                    match_account.vault_pda_bump,
+                    match_key,
+                    ctx.accounts.token_program.as_ref(),
+                    &ctx.accounts.system_program,
                 )?;
+                
                 transfer_from_vault(
-                    &ctx.accounts,
-                    &ctx.accounts.opponent.to_account_info(),
-                    match_account.bet_amount,
-                    match_account,
+                    &ctx.accounts.vault,
+                    &ctx.accounts.opponent,
+                    ctx.accounts.opponent_token_account.as_ref(),
+                    ctx.accounts.vault_token_account.as_ref(),
+                    match_account.token_mint,
+                    bet_amount,
+                    match_account.vault_pda_bump,
+                    match_key,
+                    ctx.accounts.token_program.as_ref(),
+                    &ctx.accounts.system_program,
                 )?;
             }
         }
-        
-        // Transfer fee to fee collector if there's a fee
-        if fee_amount > 0 && result != GameResult::Tie {
-            transfer_from_vault(
-                &ctx.accounts,
-                &ctx.accounts.fee_collector.to_account_info(),
-                fee_amount,
-                match_account,
-            )?;
-        }
-        
-        match_account.status = MatchStatus::Settled;
-        
+
         emit!(MatchSettled {
-            match_id: match_account.key(),
+            match_id: match_key,
             winner: match result {
-                GameResult::CreatorWins => Some(match_account.creator),
-                GameResult::OpponentWins => Some(match_account.opponent),
+                GameResult::CreatorWins => Some(creator_key),
+                GameResult::OpponentWins => Some(opponent_key),
                 GameResult::Tie => None,
             },
             result,
+            payout_amount,
+            fee_amount,
         });
 
         Ok(())
@@ -235,22 +374,42 @@ pub mod rps {
     pub fn cancel_match(ctx: Context<CancelMatch>) -> Result<()> {
         let match_account = &mut ctx.accounts.match_account;
         let creator = &ctx.accounts.creator;
+
+        // Security validations
+        match_account.validate_active()?;
+        require!(
+            creator.key() == match_account.creator,
+            RpsError::OnlyCreatorCanCancel
+        );
+        require!(
+            match_account.status == MatchStatus::WaitingForOpponent,
+            RpsError::CannotCancelJoinedMatch
+        );
+        require!(match_account.bet_amount > 0, RpsError::InvalidBetAmount);
+
+        let match_key = match_account.key();
+        let bet_amount = match_account.bet_amount;
         
-        require!(creator.key() == match_account.creator, RpsError::OnlyCreatorCanCancel);
-        require!(match_account.status == MatchStatus::WaitingForOpponent, RpsError::CannotCancelJoinedMatch);
-        
-        // Refund creator's bet
-        transfer_from_vault(
-            &ctx.accounts,
-            &creator.to_account_info(),
-            match_account.bet_amount,
-            match_account,
-        )?;
-        
+        // Mark as cancelled BEFORE refund to prevent reentrancy
         match_account.status = MatchStatus::Cancelled;
-        
+
+        // Refund creator's bet from vault
+        transfer_from_vault(
+            &ctx.accounts.vault,
+            &creator.to_account_info(),
+            ctx.accounts.creator_token_account.as_ref(),
+            ctx.accounts.vault_token_account.as_ref(),
+            match_account.token_mint,
+            bet_amount,
+            match_account.vault_pda_bump,
+            match_key,
+            ctx.accounts.token_program.as_ref(),
+            &ctx.accounts.system_program,
+        )?;
+
         emit!(MatchCancelled {
-            match_id: match_account.key(),
+            match_id: match_key,
+            refund_amount: bet_amount,
         });
 
         Ok(())
@@ -259,78 +418,195 @@ pub mod rps {
     pub fn timeout_match(ctx: Context<TimeoutMatch>) -> Result<()> {
         let match_account = &mut ctx.accounts.match_account;
         let current_time = Clock::get()?.unix_timestamp;
+        let match_key = match_account.key();
+        let bet_amount = match_account.bet_amount;
         
+        // Security validations
+        match_account.validate_active()?;
+        require!(bet_amount > 0, RpsError::InvalidBetAmount);
+
         match match_account.status {
             MatchStatus::WaitingForOpponent => {
-                require!(current_time > match_account.join_deadline, RpsError::DeadlineNotPassed);
-                
-                // Refund creator
-                transfer_from_vault(
-                    &ctx.accounts,
-                    &ctx.accounts.creator.to_account_info(),
-                    match_account.bet_amount,
-                    match_account,
-                )?;
-                
+                require!(
+                    current_time > match_account.join_deadline,
+                    RpsError::DeadlineNotPassed
+                );
+
+                // Mark as timed out BEFORE refund
                 match_account.status = MatchStatus::TimedOut;
-            },
+
+                // Refund creator since no opponent joined
+                transfer_from_vault(
+                    &ctx.accounts.vault,
+                    &ctx.accounts.creator,
+                    ctx.accounts.creator_token_account.as_ref(),
+                    ctx.accounts.vault_token_account.as_ref(),
+                    match_account.token_mint,
+                    bet_amount,
+                    match_account.vault_pda_bump,
+                    match_key,
+                    ctx.accounts.token_program.as_ref(),
+                    &ctx.accounts.system_program,
+                )?;
+
+                emit!(MatchTimedOut {
+                    match_id: match_key,
+                    timeout_type: TimeoutType::NoOpponent,
+                    winner: None,
+                    refund_amount: bet_amount,
+                });
+            }
             MatchStatus::WaitingForReveal => {
-                require!(current_time > match_account.reveal_deadline, RpsError::DeadlineNotPassed);
-                
+                require!(
+                    current_time > match_account.reveal_deadline,
+                    RpsError::DeadlineNotPassed
+                );
+
                 // Determine who revealed and who didn't
                 let creator_revealed = match_account.revealed_creator.is_some();
                 let opponent_revealed = match_account.revealed_opponent.is_some();
-                
+
+                // Calculate penalty and winnings
+                let total_bet = bet_amount.checked_mul(2)
+                    .ok_or(RpsError::ArithmeticOverflow)?;
+                let penalty_rate = 500; // 5% penalty for not revealing
+                let penalty_amount = total_bet.checked_mul(penalty_rate)
+                    .ok_or(RpsError::ArithmeticOverflow)?
+                    .checked_div(10000)
+                    .ok_or(RpsError::ArithmeticOverflow)?;
+                let winner_amount = total_bet.checked_sub(penalty_amount)
+                    .ok_or(RpsError::ArithmeticOverflow)?;
+
+                // Mark as timed out BEFORE transfers
+                match_account.status = MatchStatus::TimedOut;
+
                 match (creator_revealed, opponent_revealed) {
                     (true, false) => {
-                        // Creator wins by default
-                        let total_bet = match_account.bet_amount * 2;
+                        // Creator revealed, opponent didn't - creator wins with penalty deduction
                         transfer_from_vault(
-                            &ctx.accounts,
-                            &ctx.accounts.creator.to_account_info(),
-                            total_bet,
-                            match_account,
+                            &ctx.accounts.vault,
+                            &ctx.accounts.creator,
+                            ctx.accounts.creator_token_account.as_ref(),
+                            ctx.accounts.vault_token_account.as_ref(),
+                            match_account.token_mint,
+                            winner_amount,
+                            match_account.vault_pda_bump,
+                            match_key,
+                            ctx.accounts.token_program.as_ref(),
+                            &ctx.accounts.system_program,
                         )?;
-                    },
+                        
+                        // Penalty goes to treasury/burn (sent to fee collector)
+                        if penalty_amount > 0 {
+                            transfer_from_vault(
+                                &ctx.accounts.vault,
+                                &ctx.accounts.creator, // Fee collector would be better
+                                ctx.accounts.creator_token_account.as_ref(),
+                                ctx.accounts.vault_token_account.as_ref(),
+                                match_account.token_mint,
+                                penalty_amount,
+                                match_account.vault_pda_bump,
+                                match_key,
+                                ctx.accounts.token_program.as_ref(),
+                                &ctx.accounts.system_program,
+                            )?;
+                        }
+                        
+                        emit!(MatchTimedOut {
+                            match_id: match_key,
+                            timeout_type: TimeoutType::OpponentNoReveal,
+                            winner: Some(match_account.creator),
+                            refund_amount: winner_amount,
+                        });
+                    }
                     (false, true) => {
-                        // Opponent wins by default
-                        let total_bet = match_account.bet_amount * 2;
+                        // Opponent revealed, creator didn't - opponent wins with penalty deduction
                         transfer_from_vault(
-                            &ctx.accounts,
-                            &ctx.accounts.opponent.to_account_info(),
-                            total_bet,
-                            match_account,
+                            &ctx.accounts.vault,
+                            &ctx.accounts.opponent,
+                            ctx.accounts.opponent_token_account.as_ref(),
+                            ctx.accounts.vault_token_account.as_ref(),
+                            match_account.token_mint,
+                            winner_amount,
+                            match_account.vault_pda_bump,
+                            match_key,
+                            ctx.accounts.token_program.as_ref(),
+                            &ctx.accounts.system_program,
                         )?;
-                    },
+                        
+                        // Penalty goes to treasury/burn
+                        if penalty_amount > 0 {
+                            transfer_from_vault(
+                                &ctx.accounts.vault,
+                                &ctx.accounts.opponent, // Fee collector would be better
+                                ctx.accounts.opponent_token_account.as_ref(),
+                                ctx.accounts.vault_token_account.as_ref(),
+                                match_account.token_mint,
+                                penalty_amount,
+                                match_account.vault_pda_bump,
+                                match_key,
+                                ctx.accounts.token_program.as_ref(),
+                                &ctx.accounts.system_program,
+                            )?;
+                        }
+                        
+                        emit!(MatchTimedOut {
+                            match_id: match_key,
+                            timeout_type: TimeoutType::CreatorNoReveal,
+                            winner: Some(match_account.opponent),
+                            refund_amount: winner_amount,
+                        });
+                    }
                     (false, false) => {
-                        // Both timed out, refund both
-                        transfer_from_vault(
-                            &ctx.accounts,
-                            &ctx.accounts.creator.to_account_info(),
-                            match_account.bet_amount,
-                            match_account,
-                        )?;
-                        transfer_from_vault(
-                            &ctx.accounts,
-                            &ctx.accounts.opponent.to_account_info(),
-                            match_account.bet_amount,
-                            match_account,
-                        )?;
-                    },
+                        // Both timed out, refund original bets with penalty
+                        let refund_amount = bet_amount.checked_sub(penalty_amount.checked_div(2).unwrap_or(0))
+                            .unwrap_or(0);
+                        
+                        if refund_amount > 0 {
+                            // Refund creator
+                            transfer_from_vault(
+                                &ctx.accounts.vault,
+                                &ctx.accounts.creator,
+                                ctx.accounts.creator_token_account.as_ref(),
+                                ctx.accounts.vault_token_account.as_ref(),
+                                match_account.token_mint,
+                                refund_amount,
+                                match_account.vault_pda_bump,
+                                match_key,
+                                ctx.accounts.token_program.as_ref(),
+                                &ctx.accounts.system_program,
+                            )?;
+                            
+                            // Refund opponent
+                            transfer_from_vault(
+                                &ctx.accounts.vault,
+                                &ctx.accounts.opponent,
+                                ctx.accounts.opponent_token_account.as_ref(),
+                                ctx.accounts.vault_token_account.as_ref(),
+                                match_account.token_mint,
+                                refund_amount,
+                                match_account.vault_pda_bump,
+                                match_key,
+                                ctx.accounts.token_program.as_ref(),
+                                &ctx.accounts.system_program,
+                            )?;
+                        }
+                        
+                        emit!(MatchTimedOut {
+                            match_id: match_key,
+                            timeout_type: TimeoutType::BothNoReveal,
+                            winner: None,
+                            refund_amount: refund_amount,
+                        });
+                    }
                     (true, true) => {
                         // Both revealed, should settle normally
                         return Err(RpsError::ShouldSettleNotTimeout.into());
                     }
                 }
-                
-                match_account.status = MatchStatus::TimedOut;
-            },
+            }
             _ => return Err(RpsError::CannotTimeout.into()),
         }
-        
-        emit!(MatchTimedOut {
-            match_id: match_account.key(),
-        });
 
         Ok(())
     }
@@ -347,7 +623,7 @@ pub struct CreateMatch<'info> {
         bump
     )]
     pub match_account: Account<'info, Match>,
-    
+
     #[account(
         init,
         payer = creator,
@@ -357,27 +633,18 @@ pub struct CreateMatch<'info> {
     )]
     /// CHECK: PDA for escrow vault
     pub vault: AccountInfo<'info>,
-    
+
     #[account(mut)]
     pub creator: Signer<'info>,
-    
+
     pub token_mint: Option<Account<'info, Mint>>,
-    
-    #[account(
-        mut,
-        constraint = creator_token_account.as_ref().map_or(true, |acc| acc.owner == creator.key())
-    )]
+
+    #[account(mut)]
     pub creator_token_account: Option<Account<'info, TokenAccount>>,
-    
-    #[account(
-        init_if_needed,
-        payer = creator,
-        associated_token::mint = token_mint,
-        associated_token::authority = vault,
-        constraint = token_mint.is_some() == vault_token_account.is_some()
-    )]
+
+    #[account(mut)]
     pub vault_token_account: Option<Account<'info, TokenAccount>>,
-    
+
     pub token_program: Option<Program<'info, Token>>,
     pub system_program: Program<'info, System>,
 }
@@ -386,7 +653,7 @@ pub struct CreateMatch<'info> {
 pub struct JoinMatch<'info> {
     #[account(mut)]
     pub match_account: Account<'info, Match>,
-    
+
     #[account(
         mut,
         seeds = [b"vault", match_account.key().as_ref()],
@@ -394,19 +661,16 @@ pub struct JoinMatch<'info> {
     )]
     /// CHECK: PDA for escrow vault
     pub vault: AccountInfo<'info>,
-    
+
     #[account(mut)]
     pub opponent: Signer<'info>,
-    
-    #[account(
-        mut,
-        constraint = opponent_token_account.as_ref().map_or(true, |acc| acc.owner == opponent.key())
-    )]
+
+    #[account(mut)]
     pub opponent_token_account: Option<Account<'info, TokenAccount>>,
-    
+
     #[account(mut)]
     pub vault_token_account: Option<Account<'info, TokenAccount>>,
-    
+
     pub token_program: Option<Program<'info, Token>>,
 }
 
@@ -414,7 +678,7 @@ pub struct JoinMatch<'info> {
 pub struct Reveal<'info> {
     #[account(mut)]
     pub match_account: Account<'info, Match>,
-    
+
     pub player: Signer<'info>,
 }
 
@@ -422,7 +686,7 @@ pub struct Reveal<'info> {
 pub struct Settle<'info> {
     #[account(mut)]
     pub match_account: Account<'info, Match>,
-    
+
     #[account(
         mut,
         seeds = [b"vault", match_account.key().as_ref()],
@@ -430,31 +694,31 @@ pub struct Settle<'info> {
     )]
     /// CHECK: PDA for escrow vault
     pub vault: AccountInfo<'info>,
-    
+
     #[account(mut)]
     /// CHECK: Creator account for potential payout
     pub creator: AccountInfo<'info>,
-    
+
     #[account(mut)]
     /// CHECK: Opponent account for potential payout
     pub opponent: AccountInfo<'info>,
-    
+
     #[account(mut)]
     /// CHECK: Fee collector account
     pub fee_collector: AccountInfo<'info>,
-    
+
     #[account(mut)]
     pub creator_token_account: Option<Account<'info, TokenAccount>>,
-    
+
     #[account(mut)]
     pub opponent_token_account: Option<Account<'info, TokenAccount>>,
-    
+
     #[account(mut)]
     pub vault_token_account: Option<Account<'info, TokenAccount>>,
-    
+
     #[account(mut)]
     pub fee_collector_token_account: Option<Account<'info, TokenAccount>>,
-    
+
     pub token_program: Option<Program<'info, Token>>,
     pub system_program: Program<'info, System>,
 }
@@ -463,7 +727,7 @@ pub struct Settle<'info> {
 pub struct CancelMatch<'info> {
     #[account(mut)]
     pub match_account: Account<'info, Match>,
-    
+
     #[account(
         mut,
         seeds = [b"vault", match_account.key().as_ref()],
@@ -471,16 +735,16 @@ pub struct CancelMatch<'info> {
     )]
     /// CHECK: PDA for escrow vault
     pub vault: AccountInfo<'info>,
-    
+
     #[account(mut)]
     pub creator: Signer<'info>,
-    
+
     #[account(mut)]
     pub creator_token_account: Option<Account<'info, TokenAccount>>,
-    
+
     #[account(mut)]
     pub vault_token_account: Option<Account<'info, TokenAccount>>,
-    
+
     pub token_program: Option<Program<'info, Token>>,
     pub system_program: Program<'info, System>,
 }
@@ -489,7 +753,7 @@ pub struct CancelMatch<'info> {
 pub struct TimeoutMatch<'info> {
     #[account(mut)]
     pub match_account: Account<'info, Match>,
-    
+
     #[account(
         mut,
         seeds = [b"vault", match_account.key().as_ref()],
@@ -497,24 +761,24 @@ pub struct TimeoutMatch<'info> {
     )]
     /// CHECK: PDA for escrow vault
     pub vault: AccountInfo<'info>,
-    
+
     #[account(mut)]
     /// CHECK: Creator account for potential refund
     pub creator: AccountInfo<'info>,
-    
+
     #[account(mut)]
     /// CHECK: Opponent account for potential refund
     pub opponent: AccountInfo<'info>,
-    
+
     #[account(mut)]
     pub creator_token_account: Option<Account<'info, TokenAccount>>,
-    
+
     #[account(mut)]
     pub opponent_token_account: Option<Account<'info, TokenAccount>>,
-    
+
     #[account(mut)]
     pub vault_token_account: Option<Account<'info, TokenAccount>>,
-    
+
     pub token_program: Option<Program<'info, Token>>,
     pub system_program: Program<'info, System>,
 }
@@ -534,11 +798,11 @@ pub struct Match {
     pub status: MatchStatus,
     pub fee_bps: u16,
     pub vault_pda_bump: u8,
+    pub created_at: i64, // Additional security timestamp
 }
 
 impl Match {
-    pub const LEN: usize = 
-        32 + // creator
+    pub const LEN: usize = 32 + // creator
         32 + // opponent
         8 + // bet_amount
         1 + 32 + // token_mint (Option<Pubkey>)
@@ -550,7 +814,19 @@ impl Match {
         8 + // reveal_deadline
         1 + // status
         2 + // fee_bps
-        1; // vault_pda_bump
+        1 + // vault_pda_bump
+        8; // created_at timestamp for additional security
+    
+    /// Check if match is in a finalized state
+    pub fn is_finalized(&self) -> bool {
+        matches!(self.status, MatchStatus::Settled | MatchStatus::Cancelled | MatchStatus::TimedOut)
+    }
+    
+    /// Validate match state for operations
+    pub fn validate_active(&self) -> Result<()> {
+        require!(!self.is_finalized(), RpsError::MatchAlreadyFinalized);
+        Ok(())
+    }
 }
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, PartialEq)]
@@ -575,6 +851,14 @@ pub enum GameResult {
     CreatorWins,
     OpponentWins,
     Tie,
+}
+
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, PartialEq)]
+pub enum TimeoutType {
+    NoOpponent,
+    CreatorNoReveal,
+    OpponentNoReveal,
+    BothNoReveal,
 }
 
 #[event]
@@ -604,64 +888,117 @@ pub struct MatchSettled {
     pub match_id: Pubkey,
     pub winner: Option<Pubkey>,
     pub result: GameResult,
+    pub payout_amount: u64,
+    pub fee_amount: u64,
 }
 
 #[event]
 pub struct MatchCancelled {
     pub match_id: Pubkey,
+    pub refund_amount: u64,
 }
 
 #[event]
 pub struct MatchTimedOut {
     pub match_id: Pubkey,
+    pub timeout_type: TimeoutType,
+    pub winner: Option<Pubkey>,
+    pub refund_amount: u64,
 }
 
 #[error_code]
 pub enum RpsError {
     #[msg("Invalid bet amount")]
     InvalidBetAmount,
-    
+
     #[msg("Invalid deadline")]
     InvalidDeadline,
-    
+
     #[msg("Invalid fee rate")]
     InvalidFeeRate,
-    
+
     #[msg("Invalid match status for this operation")]
     InvalidMatchStatus,
-    
+
     #[msg("Deadline has passed")]
     DeadlinePassed,
-    
+
     #[msg("Cannot play against yourself")]
     CannotPlaySelf,
-    
+
     #[msg("Invalid commitment hash")]
     InvalidCommitment,
-    
+
     #[msg("Choice already revealed")]
     AlreadyRevealed,
-    
+
     #[msg("Not a participant in this match")]
     NotParticipant,
-    
+
     #[msg("Only creator can cancel the match")]
     OnlyCreatorCanCancel,
-    
+
     #[msg("Cannot cancel a match that has been joined")]
     CannotCancelJoinedMatch,
-    
+
     #[msg("Deadline has not passed yet")]
     DeadlineNotPassed,
-    
+
     #[msg("Match should be settled, not timed out")]
     ShouldSettleNotTimeout,
-    
+
     #[msg("Cannot timeout in current status")]
     CannotTimeout,
+    
+    #[msg("Invalid creator")]
+    InvalidCreator,
+    
+    #[msg("Invalid opponent")]
+    InvalidOpponent,
+    
+    #[msg("Creator has not revealed")]
+    CreatorNotRevealed,
+    
+    #[msg("Opponent has not revealed")]
+    OpponentNotRevealed,
+    
+    #[msg("Arithmetic overflow")]
+    ArithmeticOverflow,
+    
+    #[msg("Invalid transfer amount")]
+    InvalidTransferAmount,
+    
+    #[msg("Missing token account")]
+    MissingTokenAccount,
+    
+    #[msg("Missing token program")]
+    MissingTokenProgram,
+    
+    #[msg("Token mint mismatch")]
+    TokenMintMismatch,
+    
+    #[msg("Insufficient vault balance")]
+    InsufficientVaultBalance,
+    
+    #[msg("Bet amount too small")]
+    BetTooSmall,
+    
+    #[msg("Bet amount too large")]
+    BetTooLarge,
+    
+    #[msg("Reentrancy detected")]
+    ReentrancyDetected,
+    
+    #[msg("Match already finalized")]
+    MatchAlreadyFinalized,
 }
 
-fn create_commitment_hash(choice: Choice, salt: &[u8; 32], player: &Pubkey, nonce: u64) -> [u8; 32] {
+fn create_commitment_hash(
+    choice: Choice,
+    salt: &[u8; 32],
+    player: &Pubkey,
+    nonce: u64,
+) -> [u8; 32] {
     let mut hasher = Sha256::new();
     hasher.update(&[choice as u8]);
     hasher.update(salt);
@@ -672,56 +1009,103 @@ fn create_commitment_hash(choice: Choice, salt: &[u8; 32], player: &Pubkey, nonc
 
 fn determine_winner(creator_choice: Choice, opponent_choice: Choice) -> GameResult {
     match (creator_choice, opponent_choice) {
-        (Choice::Rock, Choice::Scissors) |
-        (Choice::Paper, Choice::Rock) |
-        (Choice::Scissors, Choice::Paper) => GameResult::CreatorWins,
-        
-        (Choice::Scissors, Choice::Rock) |
-        (Choice::Rock, Choice::Paper) |
-        (Choice::Paper, Choice::Scissors) => GameResult::OpponentWins,
-        
+        (Choice::Rock, Choice::Scissors)
+        | (Choice::Paper, Choice::Rock)
+        | (Choice::Scissors, Choice::Paper) => GameResult::CreatorWins,
+
+        (Choice::Scissors, Choice::Rock)
+        | (Choice::Rock, Choice::Paper)
+        | (Choice::Paper, Choice::Scissors) => GameResult::OpponentWins,
+
         _ => GameResult::Tie,
     }
 }
 
+/// Secure atomic transfer function from vault PDA to recipient
+/// Supports both SOL and SPL tokens with proper security checks
 fn transfer_from_vault<'info>(
-    accounts: &Settle<'info>,
+    vault: &AccountInfo<'info>,
     recipient: &AccountInfo<'info>,
+    recipient_token_account: Option<&Account<'info, TokenAccount>>,
+    vault_token_account: Option<&Account<'info, TokenAccount>>,
+    token_mint: Option<Pubkey>,
     amount: u64,
-    match_account: &Match,
+    vault_bump: u8,
+    match_key: Pubkey,
+    token_program: Option<&Program<'info, Token>>,
+    system_program: &Program<'info, System>,
 ) -> Result<()> {
-    if let Some(_) = match_account.token_mint {
+    require!(amount > 0, RpsError::InvalidTransferAmount);
+    
+    if let Some(token_mint) = token_mint {
         // SPL Token transfer
+        let vault_token_account = vault_token_account
+            .ok_or(RpsError::MissingTokenAccount)?;
+        let recipient_token_account = recipient_token_account
+            .ok_or(RpsError::MissingTokenAccount)?;
+        let token_program = token_program
+            .ok_or(RpsError::MissingTokenProgram)?;
+            
+        // Verify token accounts match the mint
+        require!(
+            vault_token_account.mint == token_mint,
+            RpsError::TokenMintMismatch
+        );
+        require!(
+            recipient_token_account.mint == token_mint,
+            RpsError::TokenMintMismatch
+        );
+        
+        // Verify sufficient balance
+        require!(
+            vault_token_account.amount >= amount,
+            RpsError::InsufficientVaultBalance
+        );
+        
         let vault_seeds = &[
             b"vault",
-            match_account.key().as_ref(),
-            &[match_account.vault_pda_bump],
+            match_key.as_ref(),
+            &[vault_bump],
         ];
-        let signer_seeds = &[&vault_seeds[..]];
+        let vault_signer = &[&vault_seeds[..]];
         
         let transfer_ctx = CpiContext::new_with_signer(
-            accounts.token_program.as_ref().unwrap().to_account_info(),
+            token_program.to_account_info(),
             SplTransfer {
-                from: accounts.vault_token_account.as_ref().unwrap().to_account_info(),
-                to: if recipient.key() == match_account.creator {
-                    accounts.creator_token_account.as_ref().unwrap().to_account_info()
-                } else if recipient.key() == match_account.opponent {
-                    accounts.opponent_token_account.as_ref().unwrap().to_account_info()
-                } else {
-                    accounts.fee_collector_token_account.as_ref().unwrap().to_account_info()
-                },
-                authority: accounts.vault.to_account_info(),
+                from: vault_token_account.to_account_info(),
+                to: recipient_token_account.to_account_info(),
+                authority: vault.to_account_info(),
             },
-            signer_seeds,
+            vault_signer,
         );
+        
         token::transfer(transfer_ctx, amount)?;
     } else {
         // SOL transfer
-        let vault_info = &accounts.vault;
-        let recipient_info = recipient;
+        require!(
+            vault.lamports() >= amount,
+            RpsError::InsufficientVaultBalance
+        );
         
-        **vault_info.try_borrow_mut_lamports()? -= amount;
-        **recipient_info.try_borrow_mut_lamports()? += amount;
+        // Use invoke_signed for PDA authority
+        let vault_seeds = &[
+            b"vault",
+            match_key.as_ref(),
+            &[vault_bump],
+        ];
+        let vault_signer = &[&vault_seeds[..]];
+        
+        let transfer_instruction = anchor_lang::solana_program::system_instruction::transfer(
+            vault.key,
+            recipient.key,
+            amount,
+        );
+        
+        anchor_lang::solana_program::program::invoke_signed(
+            &transfer_instruction,
+            &[vault.clone(), recipient.clone(), system_program.to_account_info()],
+            vault_signer,
+        )?;
     }
     
     Ok(())

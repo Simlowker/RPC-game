@@ -7,7 +7,17 @@
     "lint:fix": "prettier */*.js \"*/**/*{.js,.ts}\" -w",
     "lint": "prettier */*.js \"*/**/*{.js,.ts}\" --check",
     "build": "anchor build",
-    "test": "anchor test",
+    "test": "anchor test --skip-deploy",
+    "test:unit": "mocha -t 1000000 tests/unit/**/*.test.ts --require ts-node/register",
+    "test:integration": "mocha -t 1000000 tests/integration/**/*.test.ts --require ts-node/register",
+    "test:security": "mocha -t 1000000 tests/security/**/*.test.ts --require ts-node/register",
+    "test:performance": "mocha -t 1000000 tests/performance/**/*.test.ts --require ts-node/register",
+    "test:e2e": "mocha -t 1000000 tests/e2e/**/*.test.ts --require ts-node/register",
+    "test:validation": "mocha -t 1000000 tests/validation-suite.test.ts --require ts-node/register",
+    "test:all": "npm run test:unit && npm run test:integration && npm run test:security && npm run test:performance && npm run test:e2e && npm run test:validation",
+    "test:app": "cd app && npm run test",
+    "test:app:coverage": "cd app && npm run test:coverage",
+    "test:comprehensive": "./scripts/run-all-tests.sh",
     "deploy": "./scripts/deploy.sh",
     "setup": "./scripts/setup-dev.sh",
     "app:dev": "cd app && npm run dev",
@@ -16,7 +26,7 @@
     "app:install": "cd app && npm install --legacy-peer-deps"
   },
   "dependencies": {
-    "@coral-xyz/anchor": "^0.31.1"
+    "@coral-xyz/anchor": "^0.29.0"
   },
   "devDependencies": {
     "chai": "^4.3.4",
@@ -25,7 +35,9 @@
     "@types/bn.js": "^5.1.0",
     "@types/chai": "^4.3.0",
     "@types/mocha": "^9.0.0",
+    "@types/node": "^20.0.0",
     "typescript": "^5.7.3",
-    "prettier": "^2.6.2"
+    "prettier": "^2.6.2",
+    "ts-node": "^10.9.0"
   }
 }

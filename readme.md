@@ -1,33 +1,74 @@
-# Gamba Platform
+# SolDuel - Skill-based Rock Paper Scissors on Solana
 
-> This is a mirrored repo from the [Gamba monorepo](https://github.com/gamba-labs/gamba/tree/main/apps/demo).
+A competitive Rock Paper Scissors platform built on Solana blockchain, where players can challenge each other in fair, transparent matches with real SOL betting.
 
-An easily customizable Solana casino template featuring multiple on-chain games.
+Experience the classic game with a modern twist - provably fair gameplay, instant settlements, and competitive rewards!
 
-Simply fork the repository, provide your own Solana address, and begin collecting fees on every bet made via your frontend. No liquidity is needed from your end as it is already provided on Gamba.
+## 🎮 Features
 
-![Preview](https://github.com/gamba-labs/platform/assets/128392411/1d0fe906-c0e7-4a8d-aa2f-365cf7d3f8f5)
+* **Skill-based PvP Gameplay**: Challenge other players in fair Rock Paper Scissors matches
+* **Real SOL Betting**: Wager real SOL tokens with customizable bet amounts (0.05 - 10 SOL)
+* **Provably Fair**: Cryptographic commitment-reveal scheme ensures complete fairness
+* **Instant Settlements**: Smart contract-based automatic payouts with 1% platform fee
+* **Competitive Matching**: Create or join matches with players of your skill level
+* **Transparent Results**: All game outcomes are verifiable on-chain
+* **Responsive Design**: Play seamlessly on desktop and mobile devices
 
-## Features
+## 🚀 How It Works
 
-* Multiple customizable on-chain games
+1. **Connect Wallet**: Link your Solana wallet to start playing
+2. **Choose Bet Amount**: Select from preset amounts or set a custom wager
+3. **Create/Join Match**: Start a new game or join an existing match
+4. **Make Your Move**: Submit your Rock, Paper, or Scissors choice
+5. **Reveal & Win**: Both players reveal simultaneously, winner takes the pot!
 
-* Custom SPL tokens
+## 🛠 Technical Stack
 
-* Provably fair results
+* **Blockchain**: Solana (Devnet/Mainnet)
+* **Frontend**: React + TypeScript + Vite
+* **Smart Contract**: Rust-based Anchor program
+* **Wallet Integration**: Solana Wallet Adapter
+* **Styling**: Tailwind CSS
 
-* Bonuses
+## 📋 Quick Setup
 
-## Quick Setup
+1. Clone this repository
+2. Install dependencies: `npm install`
+3. Configure environment variables in `.env`
+4. Update platform settings in `src/constants.ts`
+5. Deploy: `npm run build`
 
-1. [Fork this repository](https://github.com/gamba-labs/platform/generate).
+## 🔧 Configuration
 
-2. [Connect your forked repo and deploy on Vercel](https://vercel.com/new).
+Edit `src/constants.ts` to customize:
+- Platform creator address (for fee collection)
+- Bet amount limits and presets
+- Game timeouts and rules
+- Platform branding and URLs
 
-3. Update the values in src/constants.ts
+## 🎯 Game Rules
 
-## More
+- **Rock** beats Scissors
+- **Paper** beats Rock  
+- **Scissors** beats Paper
+- **Tie games** return bets to both players
+- **Winners** receive opponent's bet minus 1% platform fee
 
-[Discord](https://discord.com/invite/xjBsW3e8fK)
+## 🔐 Security
 
-[NextJS version by BankkRoll](https://github.com/BankkRoll/Gamba-V2-Next.js)
+- Smart contract handles all game logic and funds
+- Commitment-reveal scheme prevents cheating
+- No custody of user funds - direct wallet-to-wallet
+- Open source and auditable code
+
+## 📱 Live Demo
+
+Visit [SolDuel.app](https://solduel.app) to play now!
+
+## 🤝 Contributing
+
+Contributions welcome! Please read our contributing guidelines and submit pull requests.
+
+---
+
+*Built with ❤️ for the Solana community*

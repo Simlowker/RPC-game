@@ -3,8 +3,9 @@ import React from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import styled from 'styled-components'
 import { useWallet } from '@solana/wallet-adapter-react'
-import { SolDuelUi } from '../components/UI'
-import { PLATFORM_NAME } from '../constants'
+import { SolDuelUi } from '../ui'
+import { PLATFORM_NAME, ZERO_FEES_TAGLINE } from '../../config/constants'
+import NetworkStatusBadges from '../common/NetworkBadge'
 import TokenSelect from './TokenSelect'
 import { UserButton } from './UserButton'
 
@@ -68,6 +69,25 @@ const LogoText = styled.span`
   }
 `
 
+const ZeroFeesText = styled.div`
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #8b5cf6;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-top: -2px;
+  
+  @media (max-width: 768px) {
+    display: none;
+  }
+`
+
+const LogoSection = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+`
+
 export default function Header() {
   const navigate = useNavigate()
   const { connected } = useWallet()
@@ -77,7 +97,10 @@ export default function Header() {
       <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
         <Logo to="/">
           <img alt={PLATFORM_NAME} src="/rps-icon.png" style={{ height: '35px' }} />
-          <LogoText>{PLATFORM_NAME}</LogoText>
+          <LogoSection>
+            <LogoText>{PLATFORM_NAME}</LogoText>
+            <ZeroFeesText>{ZERO_FEES_TAGLINE}</ZeroFeesText>
+          </LogoSection>
         </Logo>
         
         {connected && (
@@ -103,6 +126,7 @@ export default function Header() {
           position: 'relative',
         }}
       >
+        <NetworkStatusBadges />
         <TokenSelect />
         <UserButton />
       </div>

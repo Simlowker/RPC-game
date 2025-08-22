@@ -22,8 +22,8 @@ import {
 } from './types';
 import { createCommitmentHash } from './utils';
 
-// RPS Program ID from smart contract
-export const RPS_PROGRAM_ID = new PublicKey('32tQhc2c4LurhdBwDzzV8f3PtdhKm1iVaPSumDTZWAvb');
+// Universal PvP Program ID from smart contract (DEVNET)
+export const RPS_PROGRAM_ID = new PublicKey('4bdQ9U3yXD9EY2SxxMVasPmp5gw7RLtnc8yTkFZovmRR');
 
 // Mock storage for development
 let mockMatches: Map<string, RPSMatch> = new Map();

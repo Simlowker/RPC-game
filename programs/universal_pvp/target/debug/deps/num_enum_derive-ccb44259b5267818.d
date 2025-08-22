@@ -1,0 +1,9 @@
+/Users/simeonfluck/teste 3/platform/programs/universal_pvp/target/debug/deps/num_enum_derive-ccb44259b5267818.d: /Users/simeonfluck/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/num_enum_derive-0.7.4/src/lib.rs /Users/simeonfluck/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/num_enum_derive-0.7.4/src/enum_attributes.rs /Users/simeonfluck/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/num_enum_derive-0.7.4/src/parsing.rs /Users/simeonfluck/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/num_enum_derive-0.7.4/src/utils.rs /Users/simeonfluck/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/num_enum_derive-0.7.4/src/variant_attributes.rs
+
+/Users/simeonfluck/teste 3/platform/programs/universal_pvp/target/debug/deps/libnum_enum_derive-ccb44259b5267818.dylib: /Users/simeonfluck/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/num_enum_derive-0.7.4/src/lib.rs /Users/simeonfluck/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/num_enum_derive-0.7.4/src/enum_attributes.rs /Users/simeonfluck/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/num_enum_derive-0.7.4/src/parsing.rs /Users/simeonfluck/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/num_enum_derive-0.7.4/src/utils.rs /Users/simeonfluck/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/num_enum_derive-0.7.4/src/variant_attributes.rs
+
+/Users/simeonfluck/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/num_enum_derive-0.7.4/src/lib.rs:
+/Users/simeonfluck/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/num_enum_derive-0.7.4/src/enum_attributes.rs:
+/Users/simeonfluck/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/num_enum_derive-0.7.4/src/parsing.rs:
+/Users/simeonfluck/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/num_enum_derive-0.7.4/src/utils.rs:
+/Users/simeonfluck/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/num_enum_derive-0.7.4/src/variant_attributes.rs:

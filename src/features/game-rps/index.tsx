@@ -5,10 +5,11 @@ import { useWallet } from '@solana/wallet-adapter-react';
 import { SolDuelUi } from '../../components/UI';
 import { PublicKey } from '@solana/web3.js';
 
-import { useRPSGame } from './hooks/useRPSGame';
+import { useRPSGame } from './hooks/useRPSGameWrapper';
 import { MatchLobby } from './components/MatchLobby';
 import { GameInterface } from './components/GameInterface';
 import { SoundSettings } from './components/SoundSettings';
+import { ImplementationStatus } from './components/ImplementationStatus';
 import { formatTimeRemaining } from '../../rps-client';
 
 const GameContainer = styled.div`
@@ -219,6 +220,7 @@ export default function RPSGame() {
     return (
       <GameContainer>
         <SoundSettings />
+        <ImplementationStatus />
         
         <Header>
           <BackButton onClick={resetGame}>
@@ -251,6 +253,7 @@ export default function RPSGame() {
   return (
     <GameContainer>
       <SoundSettings />
+      <ImplementationStatus />
       
       {/* Show any errors */}
       {!isConnected && (

@@ -1,0 +1,906 @@
+{
+  "version": "0.1.0",
+  "name": "universal_pvp",
+  "address": "4bdQ9U3yXD9EY2SxxMVasPmp5gw7RLtnc8yTkFZovmRR",
+  "metadata": {
+    "address": "4bdQ9U3yXD9EY2SxxMVasPmp5gw7RLtnc8yTkFZovmRR"
+  },
+  "instructions": [
+    {
+      "name": "initializeRegistry",
+      "accounts": [
+        {
+          "name": "gameRegistry",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "authority",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "registerGame",
+      "accounts": [
+        {
+          "name": "gameRegistry",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "creator",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "gameType",
+          "type": {
+            "defined": "GameType"
+          }
+        },
+        {
+          "name": "name",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "createUniversalMatch",
+      "accounts": [
+        {
+          "name": "matchAccount",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "creator",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "vault",
+          "isMut": true,
+          "isSigner": false,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "type": "string",
+                "value": "vault"
+              },
+              {
+                "kind": "account",
+                "type": "publicKey",
+                "path": "match_account"
+              }
+            ]
+          }
+        },
+        {
+          "name": "tokenMint",
+          "isMut": false,
+          "isSigner": false,
+          "isOptional": true
+        },
+        {
+          "name": "creatorTokenAccount",
+          "isMut": true,
+          "isSigner": false,
+          "isOptional": true
+        },
+        {
+          "name": "vaultTokenAccount",
+          "isMut": true,
+          "isSigner": false,
+          "isOptional": true
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false,
+          "isOptional": true
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "gameType",
+          "type": {
+            "defined": "GameType"
+          }
+        },
+        {
+          "name": "betAmount",
+          "type": "u64"
+        },
+        {
+          "name": "gameConfig",
+          "type": {
+            "defined": "GameConfig"
+          }
+        }
+      ]
+    },
+    {
+      "name": "joinMatch",
+      "accounts": [
+        {
+          "name": "matchAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "opponent",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "vault",
+          "isMut": true,
+          "isSigner": false,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "type": "string",
+                "value": "vault"
+              },
+              {
+                "kind": "account",
+                "type": "publicKey",
+                "path": "match_account"
+              }
+            ]
+          }
+        },
+        {
+          "name": "tokenMint",
+          "isMut": false,
+          "isSigner": false,
+          "isOptional": true
+        },
+        {
+          "name": "opponentTokenAccount",
+          "isMut": true,
+          "isSigner": false,
+          "isOptional": true
+        },
+        {
+          "name": "vaultTokenAccount",
+          "isMut": true,
+          "isSigner": false,
+          "isOptional": true
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false,
+          "isOptional": true
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "submitMove",
+      "accounts": [
+        {
+          "name": "matchAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "player",
+          "isMut": false,
+          "isSigner": true
+        }
+      ],
+      "args": [
+        {
+          "name": "moveData",
+          "type": "bytes"
+        }
+      ]
+    },
+    {
+      "name": "commitChoice",
+      "accounts": [
+        {
+          "name": "matchAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "player",
+          "isMut": false,
+          "isSigner": true
+        }
+      ],
+      "args": [
+        {
+          "name": "commitment",
+          "type": {
+            "array": ["u8", 32]
+          }
+        }
+      ]
+    },
+    {
+      "name": "revealChoice",
+      "accounts": [
+        {
+          "name": "matchAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "player",
+          "isMut": false,
+          "isSigner": true
+        }
+      ],
+      "args": [
+        {
+          "name": "choice",
+          "type": "u8"
+        },
+        {
+          "name": "salt",
+          "type": {
+            "array": ["u8", 32]
+          }
+        }
+      ]
+    },
+    {
+      "name": "settleMatch",
+      "accounts": [
+        {
+          "name": "matchAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "creator",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "opponent",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "vault",
+          "isMut": true,
+          "isSigner": false,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "type": "string",
+                "value": "vault"
+              },
+              {
+                "kind": "account",
+                "type": "publicKey",
+                "path": "match_account"
+              }
+            ]
+          }
+        },
+        {
+          "name": "tokenMint",
+          "isMut": false,
+          "isSigner": false,
+          "isOptional": true
+        },
+        {
+          "name": "vaultTokenAccount",
+          "isMut": true,
+          "isSigner": false,
+          "isOptional": true
+        },
+        {
+          "name": "winnerTokenAccount",
+          "isMut": true,
+          "isSigner": false,
+          "isOptional": true
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false,
+          "isOptional": true
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "claimTimeout",
+      "accounts": [
+        {
+          "name": "matchAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "claimer",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "vault",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": []
+    }
+  ],
+  "accounts": [
+    {
+      "name": "UniversalMatch",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "matchId",
+            "type": "publicKey"
+          },
+          {
+            "name": "gameType",
+            "type": {
+              "defined": "GameType"
+            }
+          },
+          {
+            "name": "creator",
+            "type": "publicKey"
+          },
+          {
+            "name": "opponent",
+            "type": {
+              "option": "publicKey"
+            }
+          },
+          {
+            "name": "betAmount",
+            "type": "u64"
+          },
+          {
+            "name": "tokenMint",
+            "type": {
+              "option": "publicKey"
+            }
+          },
+          {
+            "name": "totalPot",
+            "type": "u64"
+          },
+          {
+            "name": "status",
+            "type": {
+              "defined": "MatchStatus"
+            }
+          },
+          {
+            "name": "gameState",
+            "type": "bytes"
+          },
+          {
+            "name": "winner",
+            "type": {
+              "option": "publicKey"
+            }
+          },
+          {
+            "name": "createdAt",
+            "type": "i64"
+          },
+          {
+            "name": "startedAt",
+            "type": {
+              "option": "i64"
+            }
+          },
+          {
+            "name": "endedAt",
+            "type": {
+              "option": "i64"
+            }
+          },
+          {
+            "name": "timeoutSeconds",
+            "type": "u32"
+          },
+          {
+            "name": "gameConfig",
+            "type": {
+              "defined": "GameConfig"
+            }
+          },
+          {
+            "name": "vaultBump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "GameRegistry",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "authority",
+            "type": "publicKey"
+          },
+          {
+            "name": "totalGames",
+            "type": "u32"
+          },
+          {
+            "name": "activeGames",
+            "type": {
+              "vec": {
+                "defined": "GameDefinition"
+              }
+            }
+          },
+          {
+            "name": "paused",
+            "type": "bool"
+          }
+        ]
+      }
+    },
+    {
+      "name": "GameDefinition",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "gameId",
+            "type": "u32"
+          },
+          {
+            "name": "gameType",
+            "type": {
+              "defined": "GameType"
+            }
+          },
+          {
+            "name": "name",
+            "type": "string"
+          },
+          {
+            "name": "creator",
+            "type": "publicKey"
+          },
+          {
+            "name": "createdAt",
+            "type": "i64"
+          },
+          {
+            "name": "totalMatches",
+            "type": "u64"
+          },
+          {
+            "name": "isActive",
+            "type": "bool"
+          },
+          {
+            "name": "gameToken",
+            "type": {
+              "option": "publicKey"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "RPSGameState",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "player1Commitment",
+            "type": {
+              "array": ["u8", 32]
+            }
+          },
+          {
+            "name": "player2Commitment",
+            "type": {
+              "array": ["u8", 32]
+            }
+          },
+          {
+            "name": "player1Revealed",
+            "type": {
+              "option": {
+                "defined": "RPSChoice"
+              }
+            }
+          },
+          {
+            "name": "player2Revealed",
+            "type": {
+              "option": {
+                "defined": "RPSChoice"
+              }
+            }
+          },
+          {
+            "name": "revealDeadline",
+            "type": "i64"
+          }
+        ]
+      }
+    }
+  ],
+  "types": [
+    {
+      "name": "GameType",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "RockPaperScissors"
+          },
+          {
+            "name": "Dice"
+          },
+          {
+            "name": "CoinFlip"
+          },
+          {
+            "name": "Custom"
+          }
+        ]
+      }
+    },
+    {
+      "name": "RPSChoice",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "Rock"
+          },
+          {
+            "name": "Paper"
+          },
+          {
+            "name": "Scissors"
+          }
+        ]
+      }
+    },
+    {
+      "name": "MatchStatus",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "WaitingForOpponent"
+          },
+          {
+            "name": "WaitingForCommit"
+          },
+          {
+            "name": "WaitingForReveal"
+          },
+          {
+            "name": "ReadyToSettle"
+          },
+          {
+            "name": "Settled"
+          },
+          {
+            "name": "Cancelled"
+          },
+          {
+            "name": "TimedOut"
+          }
+        ]
+      }
+    },
+    {
+      "name": "GameResult",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "Player1Wins"
+          },
+          {
+            "name": "Player2Wins"
+          },
+          {
+            "name": "Draw"
+          },
+          {
+            "name": "Pending"
+          }
+        ]
+      }
+    },
+    {
+      "name": "GameConfig",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "maxPlayers",
+            "type": "u8"
+          },
+          {
+            "name": "minBet",
+            "type": "u64"
+          },
+          {
+            "name": "maxBet",
+            "type": "u64"
+          },
+          {
+            "name": "rounds",
+            "type": "u8"
+          },
+          {
+            "name": "customParams",
+            "type": {
+              "array": ["u8", 16]
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "events": [
+    {
+      "name": "MatchCreated",
+      "fields": [
+        {
+          "name": "matchId",
+          "type": "publicKey",
+          "index": false
+        },
+        {
+          "name": "gameType",
+          "type": {
+            "defined": "GameType"
+          },
+          "index": false
+        },
+        {
+          "name": "creator",
+          "type": "publicKey",
+          "index": false
+        },
+        {
+          "name": "betAmount",
+          "type": "u64",
+          "index": false
+        },
+        {
+          "name": "timestamp",
+          "type": "i64",
+          "index": false
+        }
+      ]
+    },
+    {
+      "name": "MatchJoined",
+      "fields": [
+        {
+          "name": "matchId",
+          "type": "publicKey",
+          "index": false
+        },
+        {
+          "name": "opponent",
+          "type": "publicKey",
+          "index": false
+        },
+        {
+          "name": "timestamp",
+          "type": "i64",
+          "index": false
+        }
+      ]
+    },
+    {
+      "name": "ChoiceRevealed",
+      "fields": [
+        {
+          "name": "matchId",
+          "type": "publicKey",
+          "index": false
+        },
+        {
+          "name": "player",
+          "type": "publicKey",
+          "index": false
+        },
+        {
+          "name": "playerNumber",
+          "type": "u8",
+          "index": false
+        }
+      ]
+    },
+    {
+      "name": "MatchSettled",
+      "fields": [
+        {
+          "name": "matchId",
+          "type": "publicKey",
+          "index": false
+        },
+        {
+          "name": "winner",
+          "type": {
+            "option": "publicKey"
+          },
+          "index": false
+        },
+        {
+          "name": "result",
+          "type": {
+            "defined": "GameResult"
+          },
+          "index": false
+        },
+        {
+          "name": "totalPot",
+          "type": "u64",
+          "index": false
+        }
+      ]
+    },
+    {
+      "name": "GameRegistered",
+      "fields": [
+        {
+          "name": "gameId",
+          "type": "u32",
+          "index": false
+        },
+        {
+          "name": "gameType",
+          "type": {
+            "defined": "GameType"
+          },
+          "index": false
+        },
+        {
+          "name": "creator",
+          "type": "publicKey",
+          "index": false
+        },
+        {
+          "name": "name",
+          "type": "string",
+          "index": false
+        },
+        {
+          "name": "timestamp",
+          "type": "i64",
+          "index": false
+        }
+      ]
+    }
+  ],
+  "errors": [
+    {
+      "code": 6000,
+      "name": "InvalidChoice",
+      "msg": "Invalid choice value"
+    },
+    {
+      "code": 6001,
+      "name": "InvalidMoveData",
+      "msg": "Invalid move data"
+    },
+    {
+      "code": 6002,
+      "name": "IncompleteGameState",
+      "msg": "Incomplete game state"
+    },
+    {
+      "code": 6003,
+      "name": "InvalidStateData",
+      "msg": "Invalid state data"
+    },
+    {
+      "code": 6004,
+      "name": "CommitmentMismatch",
+      "msg": "Commitment hash doesn't match revealed choice"
+    },
+    {
+      "code": 6005,
+      "name": "AlreadyRevealed",
+      "msg": "Choice already revealed"
+    },
+    {
+      "code": 6006,
+      "name": "NotInRevealPhase",
+      "msg": "Not in reveal phase"
+    },
+    {
+      "code": 6007,
+      "name": "RevealDeadlinePassed",
+      "msg": "Reveal deadline has passed"
+    },
+    {
+      "code": 6008,
+      "name": "MatchAlreadyStarted",
+      "msg": "Match has already started"
+    },
+    {
+      "code": 6009,
+      "name": "InsufficientBet",
+      "msg": "Bet amount is too low"
+    },
+    {
+      "code": 6010,
+      "name": "BetTooLarge",
+      "msg": "Bet amount is too high"
+    },
+    {
+      "code": 6011,
+      "name": "RegistryFull",
+      "msg": "Game registry is full"
+    },
+    {
+      "code": 6012,
+      "name": "Unauthorized",
+      "msg": "Unauthorized action"
+    },
+    {
+      "code": 6013,
+      "name": "InvalidGameState",
+      "msg": "Invalid game state"
+    },
+    {
+      "code": 6014,
+      "name": "MatchNotSettled",
+      "msg": "Match has not been settled yet"
+    }
+  ]
+}

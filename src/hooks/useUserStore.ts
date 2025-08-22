@@ -1,6 +1,5 @@
 //useUserStore.ts
-import { StoreApi, create } from 'zustand'
-import { createJSONStorage, persist } from 'zustand/middleware'
+import React, { useState, useCallback } from 'react'
 
 export interface UserStore {
   /** Show disclaimer if first time user */
@@ -12,33 +11,78 @@ export interface UserStore {
   /** The last pool a user had selected */
   lastSelectedPool: { token: string, authority?: string } | null
   markGameAsPlayed: (gameId: string, played: boolean) => void
-  set: StoreApi<UserStore>['setState']
+  set: (partial: Partial<UserStore>) => void
+}
+
+// Simple localStorage-based user store
+const getStoredData = (): Partial<UserStore> => {
+  try {
+    const stored = localStorage.getItem('user')
+    return stored ? JSON.parse(stored) : {}
+  } catch {
+    return {}
+  }
+}
+
+const setStoredData = (data: Partial<UserStore>) => {
+  try {
+    localStorage.setItem('user', JSON.stringify(data))
+  } catch {
+    // ignore
+  }
+}
+
+let listeners: Array<(state: UserStore) => void> = []
+let state: UserStore = {
+  newcomer: true,
+  userModal: false,
+  lastSelectedPool: null,
+  gamesPlayed: [],
+  markGameAsPlayed: () => {},
+  set: () => {},
+  ...getStoredData()
+}
+
+const notifyListeners = () => {
+  listeners.forEach(listener => listener(state))
+}
+
+const setState = (partial: Partial<UserStore>) => {
+  state = { ...state, ...partial }
+  setStoredData(state)
+  notifyListeners()
+}
+
+state.set = setState
+state.markGameAsPlayed = (gameId: string, played: boolean) => {
+  const gamesPlayed = new Set(state.gamesPlayed)
+  if (played) {
+    gamesPlayed.add(gameId)
+  } else {
+    gamesPlayed.delete(gameId)
+  }
+  setState({ gamesPlayed: Array.from(gamesPlayed) })
 }
 
 /**
  * Store client settings here
  */
-export const useUserStore = create(
-  persist<UserStore>(
-    (set, get) => ({
-      newcomer: true,
-      userModal: false,
-      lastSelectedPool: null,
-      gamesPlayed: [],
-      markGameAsPlayed: (gameId, played) => {
-        const gamesPlayed = new Set(get().gamesPlayed)
-        if (played) {
-          gamesPlayed.add(gameId)
-        } else {
-          gamesPlayed.delete(gameId)
-        }
-        set({ gamesPlayed: Array.from(gamesPlayed) })
-      },
-      set,
-    }),
-    {
-      name: 'user',
-      storage: createJSONStorage(() => window.localStorage),
-    },
-  ),
-)
+export const useUserStore = (selector: (state: UserStore) => any) => {
+  const [, forceUpdate] = useState({})
+  
+  const subscribe = useCallback((listener: (state: UserStore) => void) => {
+    listeners.push(listener)
+    return () => {
+      listeners = listeners.filter(l => l !== listener)
+    }
+  }, [])
+
+  const refresh = useCallback(() => forceUpdate({}), [])
+  
+  // Simple subscription for the selector
+  React.useEffect(() => {
+    return subscribe(refresh)
+  }, [subscribe, refresh])
+
+  return selector(state)
+}

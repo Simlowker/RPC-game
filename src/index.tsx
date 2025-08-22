@@ -1,39 +1,34 @@
-import { ConnectionProvider, WalletProvider } from '@solana/wallet-adapter-react'
-import { WalletModalProvider } from '@solana/wallet-adapter-react-ui'
-import '@solana/wallet-adapter-react-ui/styles.css'
-import { PhantomWalletAdapter, SolflareWalletAdapter } from '@solana/wallet-adapter-wallets'
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
+import { ConnectionProvider, WalletProvider } from '@solana/wallet-adapter-react'
+import { WalletModalProvider } from '@solana/wallet-adapter-react-ui'
+import { PhantomWalletAdapter, SolflareWalletAdapter } from '@solana/wallet-adapter-wallets'
 import App from './App'
-import { RPC_ENDPOINT } from './constants'
-import './styles.css'
 
-const root = ReactDOM.createRoot(document.getElementById('root')!)
+// Import styles
+import '@solana/wallet-adapter-react-ui/styles.css'
+import './styles/globals.css'
 
-function Root() {
-  const wallets = React.useMemo(
-    () => [
-      new PhantomWalletAdapter(),
-      new SolflareWalletAdapter(),
-    ],
-    [],
-  )
+// Solana connection endpoint
+const endpoint = import.meta.env.VITE_RPC_ENDPOINT || 'https://api.devnet.solana.com'
 
-  return (
+// Wallet adapters
+const wallets = [
+  new PhantomWalletAdapter(),
+  new SolflareWalletAdapter(),
+]
+
+ReactDOM.createRoot(document.getElementById('root')!).render(
+  <React.StrictMode>
     <BrowserRouter>
-      <ConnectionProvider
-        endpoint={RPC_ENDPOINT}
-        config={{ commitment: 'processed' }}
-      >
-        <WalletProvider autoConnect wallets={wallets}>
+      <ConnectionProvider endpoint={endpoint}>
+        <WalletProvider wallets={wallets} autoConnect>
           <WalletModalProvider>
             <App />
           </WalletModalProvider>
         </WalletProvider>
       </ConnectionProvider>
     </BrowserRouter>
-  )
-}
-
-root.render(<Root />)
+  </React.StrictMode>
+)

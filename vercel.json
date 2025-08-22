@@ -1,9 +1,15 @@
 {
+  "buildCommand": "npm install --legacy-peer-deps && npm run build",
+  "outputDirectory": "dist",
+  "framework": "vite",
+  "installCommand": "npm install --legacy-peer-deps",
+  "devCommand": "npm run dev",
   "rewrites": [
-
-    { "source": "/api/(.*)", "destination": "/api/$1" },
-
-  
-    { "source": "/(.*)",     "destination": "/index.html" }
-  ]
+    { "source": "/(.*)", "destination": "/" }
+  ],
+  "env": {
+    "VITE_RPC_ENDPOINT": "https://api.devnet.solana.com",
+    "VITE_PROGRAM_ID": "4bdQ9U3yXD9EY2SxxMVasPmp5gw7RLtnc8yTkFZovmRR",
+    "VITE_NETWORK": "devnet"
+  }
 }

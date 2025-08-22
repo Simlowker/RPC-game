@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎮 Universal PvP - Interface de Test</title>
+    <script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 800px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+            text-align: center;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+        
+        .program-info {
+            background: #f8f9fa;
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            padding: 5px 0;
+            border-bottom: 1px solid #dee2e6;
+        }
+        
+        .info-row:last-child {
+            border-bottom: none;
+        }
+        
+        .label {
+            font-weight: 600;
+            color: #495057;
+        }
+        
+        .value {
+            color: #007bff;
+            font-family: monospace;
+            font-size: 0.9em;
+            word-break: break-all;
+        }
+        
+        .status {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: 600;
+        }
+        
+        .status.active {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .status.pending {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        .button-group {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 25px;
+            border-radius: 10px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        button:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .wallet-section {
+            background: #e8f4f8;
+            border: 2px solid #b8e0ec;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        
+        .wallet-status {
+            font-size: 1.2em;
+            margin-bottom: 15px;
+        }
+        
+        .wallet-address {
+            font-family: monospace;
+            color: #0066cc;
+            font-size: 0.9em;
+            margin-top: 10px;
+        }
+        
+        .console {
+            background: #2d3436;
+            color: #00ff00;
+            padding: 20px;
+            border-radius: 10px;
+            font-family: monospace;
+            font-size: 0.9em;
+            max-height: 300px;
+            overflow-y: auto;
+            margin-top: 20px;
+        }
+        
+        .console-line {
+            margin-bottom: 5px;
+            opacity: 0;
+            animation: fadeIn 0.5s forwards;
+        }
+        
+        @keyframes fadeIn {
+            to {
+                opacity: 1;
+            }
+        }
+        
+        .error {
+            color: #ff6b6b;
+        }
+        
+        .success {
+            color: #51cf66;
+        }
+        
+        .info {
+            color: #339af0;
+        }
+        
+        .warning {
+            color: #ffd43b;
+        }
+        
+        .explorer-link {
+            display: inline-block;
+            margin-top: 10px;
+            color: #007bff;
+            text-decoration: none;
+            font-weight: 600;
+        }
+        
+        .explorer-link:hover {
+            text-decoration: underline;
+        }
+        
+        .game-section {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f0f8ff;
+            border-radius: 10px;
+            border: 2px solid #87ceeb;
+        }
+        
+        .game-title {
+            font-size: 1.5em;
+            color: #333;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        
+        .game-options {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin: 20px 0;
+        }
+        
+        .game-button {
+            padding: 15px 30px;
+            font-size: 1.2em;
+            background: white;
+            color: #667eea;
+            border: 3px solid #667eea;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .game-button:hover {
+            background: #667eea;
+            color: white;
+        }
+        
+        .match-info {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎮 Universal PvP</h1>
+        <p class="subtitle">Interface de Test - Solana Devnet</p>
+        
+        <div class="program-info">
+            <div class="info-row">
+                <span class="label">Program ID:</span>
+                <span class="value">4bdQ9U3yXD9EY2SxxMVasPmp5gw7RLtnc8yTkFZovmRR</span>
+            </div>
+            <div class="info-row">
+                <span class="label">Réseau:</span>
+                <span class="value">Devnet</span>
+            </div>
+            <div class="info-row">
+                <span class="label">Status:</span>
+                <span class="status active">✅ Déployé</span>
+            </div>
+            <div class="info-row">
+                <span class="label">Explorer:</span>
+                <a href="https://explorer.solana.com/address/4bdQ9U3yXD9EY2SxxMVasPmp5gw7RLtnc8yTkFZovmRR?cluster=devnet" 
+                   target="_blank" class="explorer-link">
+                    Voir sur Solana Explorer →
+                </a>
+            </div>
+        </div>
+        
+        <div class="wallet-section">
+            <div class="wallet-status">
+                <span id="wallet-status">🔴 Wallet non connecté</span>
+            </div>
+            <button id="connect-wallet" onclick="connectWallet()">
+                Connecter Phantom Wallet
+            </button>
+            <div id="wallet-address" class="wallet-address" style="display:none;"></div>
+        </div>
+        
+        <div class="button-group">
+            <button onclick="checkProgramStatus()" title="Vérifier que le programme est bien déployé">
+                📊 Vérifier le Programme
+            </button>
+            <button onclick="initializeRegistry()" disabled id="init-btn" title="Initialiser le registre (une seule fois)">
+                🚀 Initialiser le Registre
+            </button>
+            <button onclick="registerRPS()" disabled id="register-rps-btn" title="Enregistrer le jeu Rock-Paper-Scissors">
+                ✊ Enregistrer RPS
+            </button>
+            <button onclick="registerDice()" disabled id="register-dice-btn" title="Enregistrer le jeu de Dés">
+                🎲 Enregistrer Dice
+            </button>
+            <button onclick="createMatch()" disabled id="create-match-btn" title="Créer un nouveau match">
+                🎮 Créer un Match
+            </button>
+            <button onclick="getRegistryInfo()" disabled id="registry-info-btn" title="Afficher les informations du registre">
+                📝 Info Registre
+            </button>
+        </div>
+        
+        <div id="game-section" class="game-section" style="display:none;">
+            <h2 class="game-title">Pierre-Papier-Ciseaux</h2>
+            <div class="game-options">
+                <button class="game-button" onclick="playMove('rock')">✊ Pierre</button>
+                <button class="game-button" onclick="playMove('paper')">✋ Papier</button>
+                <button class="game-button" onclick="playMove('scissors')">✌️ Ciseaux</button>
+            </div>
+            <div id="match-info" class="match-info"></div>
+        </div>
+        
+        <div class="console" id="console">
+            <div class="console-line info">Console prête...</div>
+            <div class="console-line info">En attente de connexion wallet...</div>
+        </div>
+    </div>
+    
+    <script>
+        const PROGRAM_ID = '4bdQ9U3yXD9EY2SxxMVasPmp5gw7RLtnc8yTkFZovmRR';
+        const DEVNET_URL = 'https://api.devnet.solana.com';
+        let connection;
+        let wallet;
+        let currentMatch = null;
+        
+        // Initialisation
+        window.addEventListener('load', async () => {
+            connection = new solanaWeb3.Connection(DEVNET_URL, 'confirmed');
+            log('info', `Connecté à Solana Devnet`);
+            log('info', `Program ID: ${PROGRAM_ID}`);
+        });
+        
+        // Fonction pour logger dans la console
+        function log(type, message) {
+            const console = document.getElementById('console');
+            const line = document.createElement('div');
+            line.className = `console-line ${type}`;
+            const timestamp = new Date().toLocaleTimeString();
+            line.textContent = `[${timestamp}] ${message}`;
+            console.appendChild(line);
+            console.scrollTop = console.scrollHeight;
+        }
+        
+        // Connexion du wallet
+        async function connectWallet() {
+            try {
+                if (!window.solana) {
+                    log('error', 'Phantom wallet non détecté!');
+                    alert('Veuillez installer Phantom wallet: https://phantom.app');
+                    return;
+                }
+                
+                log('info', 'Connexion au wallet...');
+                const resp = await window.solana.connect();
+                wallet = window.solana;
+                
+                document.getElementById('wallet-status').textContent = '🟢 Wallet connecté';
+                document.getElementById('wallet-address').textContent = `Adresse: ${resp.publicKey.toString()}`;
+                document.getElementById('wallet-address').style.display = 'block';
+                
+                // Activer les boutons
+                document.getElementById('init-btn').disabled = false;
+                document.getElementById('register-rps-btn').disabled = false;
+                document.getElementById('register-dice-btn').disabled = false;
+                document.getElementById('create-match-btn').disabled = false;
+                document.getElementById('registry-info-btn').disabled = false;
+                
+                log('success', `Wallet connecté: ${resp.publicKey.toString()}`);
+                
+                // Vérifier le solde
+                const balance = await connection.getBalance(resp.publicKey);
+                log('info', `Solde: ${balance / solanaWeb3.LAMPORTS_PER_SOL} SOL`);
+                
+                if (balance < 0.1 * solanaWeb3.LAMPORTS_PER_SOL) {
+                    log('warning', 'Solde faible! Utilisez: solana airdrop 2');
+                }
+                
+            } catch (err) {
+                log('error', `Erreur connexion wallet: ${err.message}`);
+            }
+        }
+        
+        // Vérifier le status du programme
+        async function checkProgramStatus() {
+            try {
+                log('info', 'Vérification du programme...');
+                const programPubkey = new solanaWeb3.PublicKey(PROGRAM_ID);
+                const accountInfo = await connection.getAccountInfo(programPubkey);
+                
+                if (accountInfo) {
+                    log('success', `Programme trouvé! Taille: ${accountInfo.data.length} bytes`);
+                    log('info', `Owner: ${accountInfo.owner.toString()}`);
+                    log('info', `Executable: ${accountInfo.executable}`);
+                    log('info', `Lamports: ${accountInfo.lamports / solanaWeb3.LAMPORTS_PER_SOL} SOL`);
+                } else {
+                    log('error', 'Programme non trouvé sur le réseau');
+                }
+            } catch (err) {
+                log('error', `Erreur: ${err.message}`);
+            }
+        }
+        
+        // Initialiser le registre
+        async function initializeRegistry() {
+            try {
+                if (!wallet) {
+                    log('error', 'Connectez d\'abord votre wallet!');
+                    return;
+                }
+                
+                log('info', 'Initialisation du registre...');
+                log('warning', 'Cette fonctionnalité nécessite l\'intégration complète du SDK Anchor');
+                log('info', 'Pour tester, utilisez: npm test ou anchor test --skip-local-validator');
+                
+                // Simuler une transaction
+                setTimeout(() => {
+                    log('success', 'Registre initialisé (simulation)');
+                    document.getElementById('game-section').style.display = 'block';
+                }, 1000);
+                
+            } catch (err) {
+                log('error', `Erreur: ${err.message}`);
+            }
+        }
+        
+        // Enregistrer RPS
+        async function registerRPS() {
+            log('info', 'Enregistrement de Rock-Paper-Scissors...');
+            log('warning', 'Utilisez les scripts de test pour cette fonction');
+            log('info', 'Commande: npm run register-rps');
+        }
+        
+        // Enregistrer Dice
+        async function registerDice() {
+            log('info', 'Enregistrement du jeu de Dés...');
+            log('warning', 'Utilisez les scripts de test pour cette fonction');
+            log('info', 'Commande: npm run register-dice');
+        }
+        
+        // Créer un match
+        async function createMatch() {
+            log('info', 'Création d\'un nouveau match...');
+            log('info', 'Match ID: ' + solanaWeb3.Keypair.generate().publicKey.toString());
+            log('info', 'Mise: 0.1 SOL');
+            log('info', 'Type: Rock-Paper-Scissors');
+            log('info', 'Rounds: Best of 5');
+            log('warning', 'Pour créer un vrai match, utilisez les scripts de test');
+            
+            document.getElementById('game-section').style.display = 'block';
+        }
+        
+        // Obtenir les infos du registre
+        async function getRegistryInfo() {
+            log('info', 'Récupération des informations du registre...');
+            log('info', 'Cette fonction nécessite l\'IDL du programme');
+            log('info', 'Utilisez: anchor test pour voir les infos complètes');
+        }
+        
+        // Jouer un coup
+        function playMove(move) {
+            log('info', `Vous jouez: ${move}`);
+            log('warning', 'Pour jouer réellement, utilisez les scripts de test');
+            log('info', 'Le système utilise commit-reveal pour éviter la triche');
+        }
+    </script>
+</body>
+</html>

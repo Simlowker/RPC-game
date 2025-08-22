@@ -1,0 +1,32 @@
+[package]
+name = "universal_pvp"
+version = "1.0.0"
+description = "Universal PvP Platform - 0% fees, unlimited games"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "lib"]
+name = "universal_pvp"
+
+[features]
+default = []
+cpi = ["no-entrypoint"]
+no-entrypoint = []
+no-idl = []
+no-log-ix-name = []
+idl-build = ["anchor-lang/idl-build", "anchor-spl/idl-build"]
+
+
+[dependencies]
+anchor-lang = { version = "0.31.1", features = ["init-if-needed"] }
+anchor-spl = "0.31.1"
+sha2 = "0.10"
+
+# Optimisations pour Mainnet
+[profile.release]
+opt-level = "z"          # Optimiser pour la taille
+lto = true               # Link Time Optimization
+codegen-units = 1        # Une seule unité de codegen pour meilleure optimisation
+strip = true             # Enlever les symboles de debug
+overflow-checks = true   # Garder les vérifications d'overflow pour la sécurité
+

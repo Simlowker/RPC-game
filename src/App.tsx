@@ -1,10 +1,11 @@
 import React from 'react'
 import { Route, Routes, useLocation } from 'react-router-dom'
 import { useWalletModal } from '@solana/wallet-adapter-react-ui'
-import { SolDuelUi } from './components/UI'
+import { SolDuelUi } from './components/ui'
 
 import { Modal } from './components/Modal'
-import { TOS_HTML } from './constants'
+import { TOS_HTML } from './config/constants'
+import DevnetWarning from './components/common/DevnetWarning'
 import { useToast } from './hooks/useToast'
 import { useUserStore } from './hooks/useUserStore'
 
@@ -65,6 +66,7 @@ export default function App() {
       <ErrorHandler />
 
       <Header />
+      <DevnetWarning />
       <Toasts />
 
       <MainWrapper>

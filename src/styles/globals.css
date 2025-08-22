@@ -1,0 +1,224 @@
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 240 10% 3.9%;
+    --foreground: 0 0% 98%;
+    --card: 240 10% 3.9%;
+    --card-foreground: 0 0% 98%;
+    --popover: 240 10% 3.9%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 263 70% 50.4%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 240 4.8% 95.9%;
+    --secondary-foreground: 240 5.9% 10%;
+    --muted: 240 4.8% 95.9%;
+    --muted-foreground: 240 3.8% 46.1%;
+    --accent: 240 4.8% 95.9%;
+    --accent-foreground: 240 5.9% 10%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 3.7% 15.9%;
+    --input: 240 3.7% 15.9%;
+    --ring: 263 70% 50.4%;
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    --background: 240 10% 3.9%;
+    --foreground: 0 0% 98%;
+    --card: 240 10% 3.9%;
+    --card-foreground: 0 0% 98%;
+    --popover: 240 10% 3.9%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 263 70% 50.4%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 240 3.7% 15.9%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 240 3.7% 15.9%;
+    --muted-foreground: 240 5% 64.9%;
+    --accent: 240 3.7% 15.9%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 3.7% 15.9%;
+    --input: 240 3.7% 15.9%;
+    --ring: 263 70% 50.4%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+}
+
+@layer components {
+  /* Glassmorphism Effect */
+  .glass {
+    @apply backdrop-blur-md bg-white/10 border border-white/20;
+  }
+
+  .glass-dark {
+    @apply backdrop-blur-md bg-black/30 border border-white/10;
+  }
+
+  /* Neon Glow Effects */
+  .neon-purple {
+    @apply shadow-[0_0_20px_rgba(124,58,237,0.5)] hover:shadow-[0_0_30px_rgba(124,58,237,0.8)];
+  }
+
+  .neon-cyan {
+    @apply shadow-[0_0_20px_rgba(6,182,212,0.5)] hover:shadow-[0_0_30px_rgba(6,182,212,0.8)];
+  }
+
+  /* Game Button Styles */
+  .game-button {
+    @apply relative overflow-hidden px-6 py-3 font-semibold text-white transition-all duration-300;
+    @apply bg-gradient-to-r from-solduel-primary to-solduel-secondary;
+    @apply hover:scale-105 active:scale-95;
+    @apply before:absolute before:inset-0 before:bg-white/20 before:translate-x-[-100%];
+    @apply hover:before:translate-x-0 before:transition-transform before:duration-300;
+  }
+
+  /* Card Styles */
+  .game-card {
+    @apply glass-dark rounded-xl p-6 transition-all duration-300;
+    @apply hover:transform hover:scale-[1.02] hover:shadow-2xl;
+  }
+
+  /* Choice Button Animation */
+  .choice-button {
+    @apply relative w-24 h-24 md:w-32 md:h-32 rounded-2xl;
+    @apply flex items-center justify-center text-5xl md:text-6xl;
+    @apply glass-dark hover:glass transition-all duration-300;
+    @apply hover:scale-110 active:scale-95 cursor-pointer;
+    @apply hover:rotate-3 active:rotate-0;
+  }
+
+  .choice-button.selected {
+    @apply bg-gradient-to-br from-solduel-primary to-solduel-secondary;
+    @apply shadow-[0_0_30px_rgba(124,58,237,0.8)];
+  }
+
+  /* Match Card */
+  .match-card {
+    @apply glass-dark rounded-lg p-4 transition-all duration-300;
+    @apply hover:bg-white/5 hover:border-solduel-primary/50;
+    @apply hover:shadow-[0_0_20px_rgba(124,58,237,0.3)];
+  }
+
+  /* Stats Card */
+  .stats-card {
+    @apply glass-dark rounded-xl p-6 relative overflow-hidden;
+    @apply before:absolute before:inset-0 before:bg-gradient-to-br;
+    @apply before:from-solduel-primary/10 before:to-transparent before:opacity-0;
+    @apply hover:before:opacity-100 before:transition-opacity before:duration-500;
+  }
+
+  /* Loading Animation */
+  .loading-pulse {
+    @apply animate-pulse bg-gradient-to-r from-solduel-primary/20 to-solduel-secondary/20;
+  }
+
+  /* Win Animation */
+  @keyframes win-celebration {
+    0% { transform: scale(1) rotate(0deg); }
+    25% { transform: scale(1.1) rotate(5deg); }
+    50% { transform: scale(1.05) rotate(-5deg); }
+    75% { transform: scale(1.1) rotate(5deg); }
+    100% { transform: scale(1) rotate(0deg); }
+  }
+
+  .win-animation {
+    animation: win-celebration 0.5s ease-in-out;
+  }
+
+  /* Gradient Text */
+  .gradient-text {
+    @apply bg-gradient-to-r from-solduel-primary to-solduel-secondary bg-clip-text text-transparent;
+  }
+
+  /* Scrollbar Styling */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-solduel-dark;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-solduel-surface rounded-full;
+    @apply hover:bg-solduel-primary/50;
+  }
+
+  /* Mobile Optimizations */
+  @media (max-width: 768px) {
+    .mobile-drawer {
+      @apply fixed inset-x-0 bottom-0 z-50 rounded-t-3xl;
+      @apply glass-dark animate-slideUp;
+    }
+
+    .mobile-nav {
+      @apply fixed bottom-0 left-0 right-0 z-40;
+      @apply glass-dark border-t border-white/10;
+    }
+  }
+}
+
+@layer utilities {
+  /* Animation Delays */
+  .animation-delay-200 {
+    animation-delay: 200ms;
+  }
+
+  .animation-delay-400 {
+    animation-delay: 400ms;
+  }
+
+  .animation-delay-600 {
+    animation-delay: 600ms;
+  }
+
+  /* Custom Transitions */
+  .transition-smooth {
+    @apply transition-all duration-300 ease-in-out;
+  }
+
+  /* Backdrop Filters */
+  .backdrop-heavy {
+    backdrop-filter: blur(20px) saturate(180%);
+  }
+
+  /* Text Shadows */
+  .text-shadow {
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  }
+
+  .text-shadow-lg {
+    text-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+  }
+
+  /* Neon Text */
+  .text-neon-purple {
+    text-shadow: 0 0 10px rgba(124, 58, 237, 0.8),
+                 0 0 20px rgba(124, 58, 237, 0.6),
+                 0 0 30px rgba(124, 58, 237, 0.4);
+  }
+
+  .text-neon-cyan {
+    text-shadow: 0 0 10px rgba(6, 182, 212, 0.8),
+                 0 0 20px rgba(6, 182, 212, 0.6),
+                 0 0 30px rgba(6, 182, 212, 0.4);
+  }
+}

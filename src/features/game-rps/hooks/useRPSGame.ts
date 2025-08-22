@@ -25,7 +25,7 @@ const DEFAULT_CONFIG: GameConfig = {
   maxBet: 100,
   defaultJoinDeadlineMinutes: 60,
   defaultRevealDeadlineMinutes: 30,
-  feeBps: 100, // 1%
+  feeBps: 0, // 0% fees - Winner takes all!
 };
 
 export const useRPSGame = () => {

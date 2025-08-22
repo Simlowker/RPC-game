@@ -1,21 +1,66 @@
-import react from '@vitejs/plugin-react'
-import { defineConfig } from 'vite'
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+import { nodePolyfills } from 'vite-plugin-node-polyfills';
+import path from 'path';
 
-const ENV_PREFIX = ['VITE_']
-
-export default defineConfig(() => ({
-  envPrefix: ENV_PREFIX,
-  server: { port: 4001, host: 'localhost' },
-  assetsInclude: ["**/*.glb"],
-  define: {
-    'process.env.ANCHOR_BROWSER': true,
-  },
+export default defineConfig({
+  plugins: [
+    react(),
+    nodePolyfills({
+      globals: {
+        Buffer: true,
+        global: true,
+        process: true,
+      },
+      protocolImports: true,
+    }),
+  ],
   resolve: {
     alias: {
-      crypto: 'crypto-browserify',
+      '@': path.resolve(__dirname, './src'),
+      'crypto': 'crypto-browserify',
+      'stream': 'stream-browserify',
+      'buffer': 'buffer',
     },
   },
-  plugins: [
-    react({ jsxRuntime: 'classic' }),
-  ],
-}))
+  define: {
+    'process.env': {},
+    global: 'globalThis',
+  },
+  optimizeDeps: {
+    esbuildOptions: {
+      define: {
+        global: 'globalThis',
+      },
+    },
+    include: [
+      '@solana/web3.js',
+      '@coral-xyz/anchor',
+      'buffer',
+      'crypto-browserify',
+      'stream-browserify',
+    ],
+  },
+  build: {
+    target: 'esnext',
+    minify: 'esbuild',
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'solana': ['@solana/web3.js', '@coral-xyz/anchor'],
+          'wallet': [
+            '@solana/wallet-adapter-base',
+            '@solana/wallet-adapter-react',
+            '@solana/wallet-adapter-react-ui',
+            '@solana/wallet-adapter-wallets',
+          ],
+          'vendor': ['react', 'react-dom', 'react-router-dom'],
+        },
+      },
+    },
+  },
+  server: {
+    port: 3000,
+    open: true,
+  },
+});

@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔍 Debug Phantom Connection</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .check {
+            margin: 20px 0;
+            padding: 15px;
+            border-radius: 8px;
+            background: #f8f9fa;
+            border-left: 4px solid #dee2e6;
+        }
+        .check.success {
+            border-left-color: #28a745;
+            background: #d4edda;
+        }
+        .check.error {
+            border-left-color: #dc3545;
+            background: #f8d7da;
+        }
+        .check.warning {
+            border-left-color: #ffc107;
+            background: #fff3cd;
+        }
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            margin: 10px;
+        }
+        button:hover {
+            background: #5a67d8;
+        }
+        .code {
+            background: #2d3436;
+            color: #00ff00;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: monospace;
+            margin: 10px 0;
+            overflow-x: auto;
+        }
+        .wallet-info {
+            background: #e8f4f8;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Debug Phantom Connection</h1>
+        
+        <div id="checks"></div>
+        
+        <div class="wallet-info">
+            <h3>Actions de Test:</h3>
+            <button onclick="checkPhantom()">1. Vérifier Phantom</button>
+            <button onclick="tryConnect()">2. Tenter Connexion</button>
+            <button onclick="forceConnect()">3. Forcer Connexion</button>
+            <button onclick="checkNetwork()">4. Vérifier Réseau</button>
+        </div>
+        
+        <div id="result" class="code"></div>
+    </div>
+
+    <script>
+        const log = (message, type = 'info') => {
+            const checksDiv = document.getElementById('checks');
+            const div = document.createElement('div');
+            div.className = `check ${type}`;
+            div.innerHTML = message;
+            checksDiv.appendChild(div);
+            
+            // Also log to console
+            console.log(message);
+            
+            // Update result div
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML += `[${new Date().toLocaleTimeString()}] ${message}<br>`;
+        };
+
+        // Check initial state
+        window.addEventListener('load', () => {
+            log('🌐 Page chargée depuis: ' + window.location.protocol + '//' + window.location.host, 'success');
+            
+            // Check if we're on localhost
+            if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+                log('✅ Serveur local détecté (bon pour Phantom)', 'success');
+            } else if (window.location.protocol === 'file:') {
+                log('❌ Fichier local détecté - Phantom ne fonctionnera pas!', 'error');
+                log('💡 Solution: Utilisez http://localhost:8080/test-debug.html', 'warning');
+            }
+            
+            // Check Phantom availability
+            setTimeout(() => {
+                if (window.solana) {
+                    log('✅ window.solana détecté!', 'success');
+                    log('Phantom version: ' + (window.solana._version || 'unknown'), 'success');
+                } else {
+                    log('❌ window.solana non trouvé', 'error');
+                    
+                    // Check for other wallets
+                    if (window.phantom) {
+                        log('🔍 window.phantom trouvé mais pas window.phantom.solana', 'warning');
+                    }
+                    
+                    if (window.solflare) {
+                        log('🔍 Solflare détecté - vous pourriez utiliser Solflare à la place', 'warning');
+                    }
+                }
+            }, 1000);
+        });
+
+        function checkPhantom() {
+            log('🔍 Vérification de Phantom...', 'info');
+            
+            if (typeof window.solana !== 'undefined') {
+                log('✅ Phantom est installé!', 'success');
+                log('isPhantom: ' + window.solana.isPhantom, 'success');
+                log('isConnected: ' + window.solana.isConnected, 'success');
+                
+                if (window.solana.publicKey) {
+                    log('Wallet déjà connecté: ' + window.solana.publicKey.toString(), 'success');
+                }
+            } else {
+                log('❌ Phantom non détecté', 'error');
+                
+                // Try to wait a bit more
+                log('⏳ Attente supplémentaire de 2 secondes...', 'warning');
+                setTimeout(() => {
+                    if (window.solana) {
+                        log('✅ Phantom détecté après attente!', 'success');
+                    } else {
+                        log('❌ Phantom toujours non détecté', 'error');
+                        log('Solutions possibles:', 'warning');
+                        log('1. Rafraîchissez la page (F5)', 'warning');
+                        log('2. Vérifiez que Phantom est activé dans les extensions', 'warning');
+                        log('3. Redémarrez votre navigateur', 'warning');
+                    }
+                }, 2000);
+            }
+        }
+
+        async function tryConnect() {
+            log('🔌 Tentative de connexion...', 'info');
+            
+            if (!window.solana) {
+                log('❌ Impossible de se connecter - Phantom non trouvé', 'error');
+                return;
+            }
+            
+            try {
+                const resp = await window.solana.connect();
+                log('✅ Connexion réussie!', 'success');
+                log('Adresse: ' + resp.publicKey.toString(), 'success');
+                
+                // Check network
+                const network = await window.solana.request({ method: "getNetwork" });
+                log('Réseau: ' + JSON.stringify(network), 'info');
+                
+            } catch (err) {
+                log('❌ Erreur de connexion: ' + err.message, 'error');
+                console.error(err);
+                
+                if (err.message.includes('User rejected')) {
+                    log('L\'utilisateur a refusé la connexion', 'warning');
+                }
+            }
+        }
+
+        async function forceConnect() {
+            log('🔄 Tentative de connexion forcée...', 'info');
+            
+            if (!window.solana) {
+                log('❌ Phantom non disponible', 'error');
+                return;
+            }
+            
+            try {
+                // Try disconnect first
+                await window.solana.disconnect();
+                log('Déconnexion effectuée', 'info');
+                
+                // Wait a bit
+                await new Promise(resolve => setTimeout(resolve, 500));
+                
+                // Try connect with onlyIfTrusted false
+                const resp = await window.solana.connect({ onlyIfTrusted: false });
+                log('✅ Connexion forcée réussie!', 'success');
+                log('Adresse: ' + resp.publicKey.toString(), 'success');
+                
+            } catch (err) {
+                log('❌ Erreur: ' + err.message, 'error');
+            }
+        }
+
+        async function checkNetwork() {
+            log('🌐 Vérification du réseau...', 'info');
+            
+            if (!window.solana) {
+                log('❌ Phantom non disponible', 'error');
+                return;
+            }
+            
+            if (!window.solana.isConnected) {
+                log('⚠️ Wallet non connecté', 'warning');
+                return;
+            }
+            
+            try {
+                // This might not work on all versions
+                log('Tentative de récupération du réseau...', 'info');
+                
+                // Try to make a simple request to check the network
+                const connection = new (window.solanaWeb3 || solanaWeb3).Connection('https://api.devnet.solana.com');
+                const balance = await connection.getBalance(window.solana.publicKey);
+                
+                log('✅ Connexion à Devnet réussie!', 'success');
+                log('Balance: ' + (balance / 1e9) + ' SOL', 'success');
+                
+            } catch (err) {
+                log('⚠️ Erreur réseau: ' + err.message, 'warning');
+            }
+        }
+    </script>
+    
+    <!-- Include Solana Web3 -->
+    <script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.min.js"></script>
+</body>
+</html>

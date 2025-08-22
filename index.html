@@ -1,44 +1,428 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <meta name="theme-color" content="#9945FF" />
-    <title>SolDuel - Skill-Based Rock Paper Scissors on Solana</title>
-    <meta name="description" content="Experience competitive Rock Paper Scissors gaming on Solana. Fair play, transparent blockchain, instant settlements. Join the skill-based gaming revolution." />
-    <meta name="keywords" content="Rock Paper Scissors Solana, Blockchain RPS game, Crypto PvP gaming, Solana games, Skill-based gaming" />
-    
-    <!-- Favicons -->
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
-    <link rel="icon" type="image/png" href="/favicon.png">
-    <link rel="apple-touch-icon" href="/icon-512.png" />
-    
-    <!-- PWA -->
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black">
-    <meta name="apple-mobile-web-app-title" content="SolDuel">
-    <link rel="manifest" href="/manifest.webmanifest">
-    
-    <!-- Open Graph / Social Sharing -->
-    <meta property="og:type" content="website" />
-    <meta property="og:title" content="SolDuel - Skill-Based Rock Paper Scissors on Solana" />
-    <meta property="og:description" content="Experience competitive Rock Paper Scissors gaming on Solana blockchain. Fair play, transparent outcomes, instant settlements." />
-    <meta property="og:image" content="/logo.svg" />
-    <meta property="og:url" content="https://solduel.com" />
-    
-    <!-- Twitter Cards -->
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="SolDuel - Skill-Based Gaming on Solana" />
-    <meta name="twitter:description" content="Master Rock Paper Scissors strategy on the blockchain. Fair, transparent, skill-based gaming." />
-    <meta name="twitter:image" content="/logo.svg" />
-  </head>
-  <body>
-    <noscript>You need to enable JavaScript to run this app.</noscript>
-    <div id="root"></div>
-    <script type="module">
-      import * as buffer from 'buffer'
-      window.Buffer = buffer.Buffer
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SolDuel - Rock Paper Scissors (0% Fees) | Solana</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            color: white;
+        }
+        
+        .container {
+            max-width: 800px;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        
+        h1 {
+            text-align: center;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .tagline {
+            text-align: center;
+            font-size: 1.2em;
+            color: #ffeb3b;
+            margin-bottom: 30px;
+            font-weight: bold;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        
+        .network-badge {
+            display: inline-block;
+            background: #ff6b6b;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            margin: 10px 5px;
+        }
+        
+        .status-section {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        
+        .status-item {
+            display: flex;
+            justify-content: space-between;
+            margin: 10px 0;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 5px;
+        }
+        
+        .status-item .label {
+            font-weight: bold;
+        }
+        
+        .status-item .value {
+            font-family: monospace;
+            color: #ffeb3b;
+        }
+        
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 10px;
+            font-size: 1em;
+            cursor: pointer;
+            margin: 10px;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        }
+        
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .game-section {
+            text-align: center;
+            margin: 30px 0;
+        }
+        
+        .choices {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin: 20px 0;
+        }
+        
+        .choice-btn {
+            width: 100px;
+            height: 100px;
+            font-size: 3em;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 15px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .choice-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: scale(1.1);
+        }
+        
+        .match-form {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            max-width: 400px;
+            margin: 0 auto;
+        }
+        
+        input {
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            font-size: 1em;
+            background: rgba(255, 255, 255, 0.9);
+            color: #333;
+        }
+        
+        .matches-list {
+            margin: 20px 0;
+        }
+        
+        .match-card {
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 10px;
+            padding: 15px;
+            margin: 10px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .match-info {
+            flex: 1;
+        }
+        
+        .error {
+            background: #ff6b6b;
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            text-align: center;
+        }
+        
+        .success {
+            background: #51cf66;
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            text-align: center;
+        }
+
+        .warning {
+            background: #ff9800;
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            text-align: center;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎮 SolDuel RPS</h1>
+        <p class="tagline">🎯 0% FEES - WINNER TAKES ALL! 🎯</p>
+        
+        <div style="text-align: center;">
+            <span class="network-badge">🔴 DEVNET</span>
+            <span class="network-badge">⚡ TEST TOKENS ONLY</span>
+        </div>
+
+        <div class="warning">
+            ⚠️ This is a DEVNET demo - Use test SOL only! Get free test SOL from faucet.
+        </div>
+
+        <div class="status-section">
+            <h2>📊 Connection Status</h2>
+            <div class="status-item">
+                <span class="label">Network:</span>
+                <span class="value">Solana Devnet</span>
+            </div>
+            <div class="status-item">
+                <span class="label">Program ID:</span>
+                <span class="value" style="font-size: 0.8em;">4bdQ9U3yXD9EY2SxxMVasPmp5gw7RLtnc8yTkFZovmRR</span>
+            </div>
+            <div class="status-item">
+                <span class="label">Wallet:</span>
+                <span class="value" id="wallet-status">Not Connected</span>
+            </div>
+            <div class="status-item">
+                <span class="label">Balance:</span>
+                <span class="value" id="balance">0 SOL</span>
+            </div>
+        </div>
+
+        <div class="game-section">
+            <button id="connect-btn" onclick="connectWallet()">🔗 Connect Phantom Wallet</button>
+            
+            <div id="game-area" style="display: none;">
+                <h2>🎮 Create New Match</h2>
+                <div class="match-form">
+                    <input type="number" id="bet-amount" placeholder="Bet Amount (SOL)" value="0.01" step="0.001" min="0.001">
+                    <button onclick="createMatch()">🚀 Create Match (0% Fees)</button>
+                </div>
+
+                <h2 style="margin-top: 30px;">🎯 Open Matches</h2>
+                <div id="matches-list" class="matches-list">
+                    <p>Loading matches...</p>
+                </div>
+
+                <div id="game-play" style="display: none;">
+                    <h2>Choose Your Move!</h2>
+                    <div class="choices">
+                        <div class="choice-btn" onclick="playChoice('rock')">🪨</div>
+                        <div class="choice-btn" onclick="playChoice('paper')">📄</div>
+                        <div class="choice-btn" onclick="playChoice('scissors')">✂️</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="message-area"></div>
+    </div>
+
+    <script>
+        const PROGRAM_ID = '4bdQ9U3yXD9EY2SxxMVasPmp5gw7RLtnc8yTkFZovmRR';
+        const RPC_ENDPOINT = 'https://api.devnet.solana.com';
+        
+        let connection;
+        let wallet;
+        let provider;
+
+        // Initialize Solana connection
+        function initConnection() {
+            connection = new solanaWeb3.Connection(RPC_ENDPOINT, 'confirmed');
+            console.log('Connected to Solana Devnet');
+        }
+
+        // Connect Phantom Wallet
+        async function connectWallet() {
+            try {
+                if (!window.solana || !window.solana.isPhantom) {
+                    showMessage('Please install Phantom Wallet extension!', 'error');
+                    window.open('https://phantom.app/', '_blank');
+                    return;
+                }
+
+                const resp = await window.solana.connect();
+                wallet = window.solana;
+                
+                document.getElementById('wallet-status').textContent = 
+                    resp.publicKey.toString().slice(0, 4) + '...' + 
+                    resp.publicKey.toString().slice(-4);
+                
+                document.getElementById('connect-btn').textContent = '✅ Connected';
+                document.getElementById('connect-btn').disabled = true;
+                document.getElementById('game-area').style.display = 'block';
+                
+                // Update balance
+                updateBalance();
+                
+                // Load matches
+                loadMatches();
+                
+                showMessage('Wallet connected successfully!', 'success');
+            } catch (err) {
+                console.error('Failed to connect wallet:', err);
+                showMessage('Failed to connect wallet: ' + err.message, 'error');
+            }
+        }
+
+        // Update wallet balance
+        async function updateBalance() {
+            if (!wallet) return;
+            
+            try {
+                const publicKey = new solanaWeb3.PublicKey(wallet.publicKey.toString());
+                const balance = await connection.getBalance(publicKey);
+                document.getElementById('balance').textContent = 
+                    (balance / solanaWeb3.LAMPORTS_PER_SOL).toFixed(4) + ' SOL';
+            } catch (err) {
+                console.error('Failed to fetch balance:', err);
+            }
+        }
+
+        // Create a new match
+        async function createMatch() {
+            if (!wallet) {
+                showMessage('Please connect wallet first!', 'error');
+                return;
+            }
+
+            try {
+                const betAmount = parseFloat(document.getElementById('bet-amount').value);
+                if (betAmount < 0.001) {
+                    showMessage('Minimum bet is 0.001 SOL', 'error');
+                    return;
+                }
+
+                showMessage('Creating match... (This feature requires full client implementation)', 'warning');
+                
+                // In a real implementation, this would:
+                // 1. Generate commitment hash
+                // 2. Call the smart contract createMatch instruction
+                // 3. Sign and send transaction
+                
+                // For demo purposes, show the process
+                setTimeout(() => {
+                    showMessage(`Match would be created with ${betAmount} SOL bet (0% fees - winner takes all!)`, 'success');
+                }, 1000);
+                
+            } catch (err) {
+                console.error('Failed to create match:', err);
+                showMessage('Failed to create match: ' + err.message, 'error');
+            }
+        }
+
+        // Load open matches
+        async function loadMatches() {
+            if (!connection) return;
+            
+            const matchesDiv = document.getElementById('matches-list');
+            matchesDiv.innerHTML = '<div class="match-card"><div class="match-info"><strong>Demo Match 1</strong><br>Bet: 0.01 SOL | Status: Open</div><button onclick="joinMatch(\'demo1\')">Join Match</button></div>' +
+                                 '<div class="match-card"><div class="match-info"><strong>Demo Match 2</strong><br>Bet: 0.05 SOL | Status: Open</div><button onclick="joinMatch(\'demo2\')">Join Match</button></div>' +
+                                 '<p style="margin-top: 20px; opacity: 0.7;">Note: Full match listing requires complete client implementation</p>';
+        }
+
+        // Join a match
+        function joinMatch(matchId) {
+            if (!wallet) {
+                showMessage('Please connect wallet first!', 'error');
+                return;
+            }
+            
+            showMessage(`Joining match ${matchId}... (Demo mode)`, 'warning');
+            document.getElementById('game-play').style.display = 'block';
+        }
+
+        // Play a choice
+        function playChoice(choice) {
+            showMessage(`You chose ${choice}! In a real game, this would be committed on-chain with 0% fees.`, 'success');
+        }
+
+        // Show message
+        function showMessage(message, type = 'info') {
+            const messageArea = document.getElementById('message-area');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = type;
+            messageDiv.textContent = message;
+            messageArea.innerHTML = '';
+            messageArea.appendChild(messageDiv);
+            
+            setTimeout(() => {
+                messageDiv.style.opacity = '0';
+                setTimeout(() => messageDiv.remove(), 500);
+            }, 5000);
+        }
+
+        // Initialize on load
+        window.addEventListener('load', () => {
+            initConnection();
+            
+            // Check if Phantom is installed
+            setTimeout(() => {
+                if (window.solana && window.solana.isPhantom) {
+                    console.log('Phantom wallet detected');
+                } else {
+                    showMessage('Phantom wallet not detected. Please install it to play!', 'warning');
+                }
+            }, 100);
+        });
+
+        // Auto-update balance
+        setInterval(updateBalance, 10000);
     </script>
-    <script type="module" src="./src/index.tsx"></script>
-  </body>
+    <div id="root"></div>
+    <script type="module" src="/src/index.tsx"></script>
+</body>
 </html>

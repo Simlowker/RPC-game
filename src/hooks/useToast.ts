@@ -1,5 +1,5 @@
 //useToast.ts
-import { create } from 'zustand'
+import { useState, useCallback } from 'react'
 
 export interface Toast {
   id: string
@@ -10,28 +10,26 @@ export interface Toast {
 
 export type ToastInput = Omit<Toast, 'id'>
 
-interface ToastStore {
-  toasts: Toast[]
+// Simple toast implementation without zustand
+let toastListeners: Array<(toasts: Toast[]) => void> = []
+let toasts: Toast[] = []
 
-  discard: (id: string) => void
-
-  add: (toast: ToastInput) => void
+const notifyListeners = () => {
+  toastListeners.forEach(listener => listener([...toasts]))
 }
 
-export const useToastStore = create<ToastStore>(
-  (set, get) => ({
-    toasts: [],
-
-    discard: (id) => {
-      set({ toasts: get().toasts.filter((x) => x.id !== id) })
-    },
-
-    add: (toast) => {
-      set({ toasts: [...get().toasts, { ...toast, id: String(Math.random()) }] })
-    },
-  }),
-)
+const addToast = (toast: ToastInput) => {
+  const newToast = { ...toast, id: String(Math.random()) }
+  toasts = [...toasts, newToast]
+  notifyListeners()
+  
+  // Auto-remove after 5 seconds
+  setTimeout(() => {
+    toasts = toasts.filter(t => t.id !== newToast.id)
+    notifyListeners()
+  }, 5000)
+}
 
 export function useToast() {
-  return useToastStore(state => state.add)
+  return useCallback(addToast, [])
 }
